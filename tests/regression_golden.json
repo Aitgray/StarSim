@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "tick": 5,
+  "world_prices": {
+    "sol": {
+      "tools": 50.0,
+      "ore": 32.47695,
+      "food": 5.0
+    }
+  },
+  "world_controls": {},
+  "total_trade_volume": 0.0,
+  "lane_hazards": {
+    "sol-ac": 0.1,
+    "sol-pc": 0.2,
+    "ac-pc": 0.8
+  },
+  "active_shipments_count": 0
+}

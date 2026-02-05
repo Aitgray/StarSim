@@ -1,0 +1,29 @@
+[project]
+name = "starsim"
+version = "0.1.0"
+description = "A space simulation game."
+authors = [
+    {name = "Your Name", email = "you@example.com"},
+]
+requires-python = ">=3.9"
+dependencies = [
+    "ruff",
+    "pytest",
+    "mypy",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = [
+    "tests",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.black]
+line-length = 88
+
+[tool.mypy]
+# This is intentionally left blank for now.
+# We can add configuration here as the project grows.

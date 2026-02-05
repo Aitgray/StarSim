@@ -1,0 +1,13 @@
+# data/commodities.yaml
+- id: "food"
+  name: "Food"
+  base_price: 10.0
+  perishable: true
+- id: "ore"
+  name: "Ore"
+  base_price: 50.0
+  perishable: false
+- id: "tools"
+  name: "Tools"
+  base_price: 100.0
+  perishable: false

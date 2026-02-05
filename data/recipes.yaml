@@ -1,0 +1,22 @@
+# data/recipes.yaml
+- id: "farm_food"
+  name: "Farm Food"
+  inputs: {}
+  outputs:
+    food: 100.0 # Produces 100 food units per production unit
+  max_production_units_per_tick: 10.0 # Max 10 production units per tick (yielding 1000 food)
+
+- id: "mine_ore"
+  name: "Mine Ore"
+  inputs: {}
+  outputs:
+    ore: 50.0 # Produces 50 ore units per production unit
+  max_production_units_per_tick: 10.0 # Max 10 production units per tick (yielding 500 ore)
+
+- id: "assemble_tools"
+  name: "Assemble Tools"
+  inputs:
+    ore: 10.0 # Requires 10 ore per production unit
+  outputs:
+    tools: 1.0 # Produces 1 tool unit per production unit
+  max_production_units_per_tick: 50.0 # Max 50 production units per tick (yielding 50 tools)

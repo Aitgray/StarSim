@@ -1,0 +1,59 @@
+# data/events.yaml
+- id: "food_riot"
+  base_weight: 5.0
+  conditions:
+    - type: "world_scarcity"
+      commodity_id: "food"
+      min: 0.5
+      weight_multiplier: 10.0
+    - type: "world_unrest"
+      min: 0.6
+      weight_multiplier: 5.0
+  effects:
+    - type: "change_unrest"
+      delta: 0.1
+    - type: "change_stability"
+      delta: -0.1
+    - type: "remove_inventory"
+      commodity_id: "food"
+      quantity: 50.0
+
+- id: "ore_boom"
+  base_weight: 2.0
+  conditions:
+    - type: "world_tag"
+      tag: "industrial"
+      weight_multiplier: 3.0
+    - type: "world_tech"
+      min: 0.5
+      weight_multiplier: 2.0
+  effects:
+    - type: "add_inventory"
+      commodity_id: "ore"
+      quantity: 100.0
+    - type: "change_prosperity"
+      delta: 0.1
+
+- id: "pirate_raid"
+  base_weight: 3.0
+  conditions:
+    - type: "lane_hazard"
+      min: 0.7
+      weight_multiplier: 5.0
+  effects:
+    - type: "change_lane_hazard"
+      delta: 0.2
+    - type: "remove_inventory_random_worlds"
+      commodity_id: "ore"
+      quantity: 20.0
+      num_worlds: 2
+
+- id: "diplomatic_summit"
+  base_weight: 1.0
+  conditions:
+    - type: "factions_tension" # Placeholder for future tension model
+      max: 0.3
+      weight_multiplier: 2.0
+  effects:
+    - type: "change_stability"
+      delta: 0.05
