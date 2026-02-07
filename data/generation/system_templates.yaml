@@ -1,0 +1,12 @@
+# data/generation/system_templates.yaml
+# System archetypes or templates for generating star systems.
+# For now, it remains minimal.
+system_templates:
+  - id: "default_system"
+    name: "Default Star System"
+    min_planets: 2
+    max_planets: 7
+    planet_type_weights: # Reference weights from planet_types.yaml or specific overrides
+      continental: 1.0
+      desert: 1.0
+      ocean: 1.0

@@ -1,0 +1,4 @@
+# data/generation/habitability_tables.yaml
+# Habitability bands are defined within planet_types.yaml for simplicity
+# This file can be used for global habitability modifiers or shared tables if needed.
+# For now, it remains minimal.

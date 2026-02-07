@@ -1,15 +1,15 @@
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import yaml
 
-from ..core.ids import WorldId, LaneId, CommodityId, RecipeId
+from ..core.ids import WorldId, LaneId, CommodityId, RecipeId, FactionId # Added FactionId and CommodityId
 from ..core.state import UniverseState
 from ..world.model import World, Lane
 from ..economy.market import Market
 from ..economy.inventory import Inventory
 from ..economy.consumption import Population
 from ..economy.production import Industry # Import Industry
-
+from ..factions.model import Faction, WorldFactionState # Added Faction, WorldFactionState
 
 class UniverseSchemaError(Exception):
     """Raised when there is a problem with the universe data schema."""
@@ -33,8 +33,10 @@ def load_universe(path: Path) -> UniverseState:
 
     worlds_data = data.get('worlds', [])
     lanes_data = data.get('lanes', [])
+    factions_data = data.get('factions', []) # Get factions data
     print(f"DEBUG: Worlds data: {worlds_data}")
     print(f"DEBUG: Lanes data: {lanes_data}")
+    print(f"DEBUG: Factions data: {factions_data}") # Debugging factions data
 
     # Schema check: duplicate IDs
     world_ids = [w['id'] for w in worlds_data]
@@ -44,6 +46,33 @@ def load_universe(path: Path) -> UniverseState:
     lane_ids = [l['id'] for l in lanes_data]
     if len(lane_ids) != len(set(lane_ids)):
         raise UniverseSchemaError("Duplicate lane IDs found.")
+
+    faction_ids = [f['id'] for f in factions_data]
+    if len(faction_ids) != len(set(faction_ids)):
+        raise UniverseSchemaError("Duplicate faction IDs found.")
+
+    # --- Load Factions ---
+    factions = {}
+    for f_data in factions_data:
+        print(f"DEBUG: Faction f_data before construction: {f_data}") # Debugging print
+        faction_id = FactionId(f_data['id'])
+        capital_id = f_data.get('capital_world_id')
+        
+        desired_res = {}
+        if 'desired_resources' in f_data:
+            for res_id, value in f_data['desired_resources'].items():
+                desired_res[CommodityId(res_id)] = value
+
+        factions[faction_id] = Faction(
+            id=faction_id,
+            name=f_data['name'],
+            color=f_data.get('color', '#CCCCCC'), # Add this line to load color from YAML
+            traits=set(f_data.get('traits', [])),
+            weights=f_data.get('weights', {}),
+            capital_world_id=WorldId(capital_id) if capital_id else None,
+            desired_resources=desired_res,
+        )
+    print(f"DEBUG: Factions created: {factions}")
 
     worlds = {}
     for w_data in worlds_data:
@@ -73,6 +102,40 @@ def load_universe(path: Path) -> UniverseState:
             industry_data = w_data['industry']
             caps = {RecipeId(r_id): cap for r_id, cap in industry_data.get('caps', {}).items()}
             industry = Industry(caps=caps)
+        
+        # --- Load World Faction State ---
+        world_factions_state_instance = None # Initialize a single instance of WorldFactionState
+        if 'factions' in w_data:
+            raw_world_fac_data = w_data['factions'] # This is the {'influence': ..., 'control': ...} dict
+
+            # Create the WorldFactionState instance
+            wfs_instance = WorldFactionState()
+            
+            # Populate influence
+            influence_data = raw_world_fac_data.get('influence', {})
+            for fac_id_str, inf_val in influence_data.items():
+                faction_id = FactionId(fac_id_str)
+                if faction_id not in factions:
+                    raise UniverseSchemaError(f"World '{world_id}' references unknown faction '{fac_id_str}' in influence data.")
+                wfs_instance.influence[faction_id] = inf_val
+            
+            # Populate garrison (if present in YAML)
+            garrison_data = raw_world_fac_data.get('garrison', {})
+            for res_id_str, qty in garrison_data.items():
+                wfs_instance.garrison[CommodityId(res_id_str)] = qty
+
+            # Set control (if present)
+            controller_id_str = raw_world_fac_data.get('control')
+            if controller_id_str:
+                controller_id = FactionId(controller_id_str)
+                if controller_id not in factions:
+                    raise UniverseSchemaError(f"World '{world_id}' references unknown faction '{controller_id_str}' as controller.")
+                wfs_instance.control = controller_id
+            
+            # Resolve control to ensure it's consistent with influence, especially with hysteresis
+            wfs_instance.resolve_control()
+            
+            world_factions_state_instance = wfs_instance # Assign the created instance
 
         worlds[world_id] = World(
             id=world_id,
@@ -86,6 +149,7 @@ def load_universe(path: Path) -> UniverseState:
             market=market,
             population=population,
             industry=industry,
+            factions=world_factions_state_instance, # Assign the single WorldFactionState instance
         )
 
     lanes = {}
@@ -114,7 +178,8 @@ def load_universe(path: Path) -> UniverseState:
         seed=seed,
         tick=data.get('tick', 0), # Use 0 as default if not in data
         worlds=worlds,
-        lanes=lanes
+        lanes=lanes,
+        factions=factions, # Pass loaded factions to UniverseState
     )
     print("DEBUG: UniverseState successfully created.")
     return state

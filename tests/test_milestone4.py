@@ -28,17 +28,17 @@ def test_world_with_market() -> World:
     
     # Set initial inventory for testing
     market.inventory.add(CommodityId("food"), 50.0)
-    market.inventory.add(CommodityId("ore"), 100.0)
+    market.inventory.add(CommodityId("minerals"), 100.0)
 
     # Set initial prices (e.g., base price)
     food_commodity = commodity_registry.get(CommodityId("food"))
-    ore_commodity = commodity_registry.get(CommodityId("ore"))
+    minerals_commodity = commodity_registry.get(CommodityId("minerals"))
     market.prices[food_commodity.id] = food_commodity.base_price
-    market.prices[ore_commodity.id] = ore_commodity.base_price
+    market.prices[minerals_commodity.id] = minerals_commodity.base_price
 
     # Set targets
     market.targets[CommodityId("food")] = 100.0 # Target more than current inventory
-    market.targets[CommodityId("ore")] = 50.0  # Target less than current inventory
+    market.targets[CommodityId("minerals")] = 50.0  # Target less than current inventory
     
     world.market = market
     return world
@@ -67,12 +67,12 @@ def test_price_decreases_when_inventory_above_target(universe_state_with_market)
     world = universe_state_with_market.worlds[WorldId("test_market_world")]
     market = world.market
     
-    initial_ore_price = market.prices[CommodityId("ore")]
+    initial_minerals_price = market.prices[CommodityId("minerals")]
     
-    # Ore inventory (100) is above target (50)
+    # Minerals inventory (100) is above target (50)
     update_prices(world, universe_state_with_market)
     
-    assert market.prices[CommodityId("ore")] < initial_ore_price
+    assert market.prices[CommodityId("minerals")] < initial_minerals_price
 
 
 def test_price_remains_within_bounds(universe_state_with_market):
@@ -80,22 +80,22 @@ def test_price_remains_within_bounds(universe_state_with_market):
     market = world.market
 
     food_commodity = commodity_registry.get(CommodityId("food"))
-    ore_commodity = commodity_registry.get(CommodityId("ore"))
+    minerals_commodity = commodity_registry.get(CommodityId("minerals"))
 
     # Force prices to extremes to test clamping
     market.prices[food_commodity.id] = food_commodity.base_price * 0.1 # Below min bound
-    market.prices[ore_commodity.id] = ore_commodity.base_price * 5.0 # Above max bound
+    market.prices[minerals_commodity.id] = minerals_commodity.base_price * 5.0 # Above max bound
 
     for _ in range(5): # Run several updates to ensure clamping
         update_prices(world, universe_state_with_market)
 
     min_food_price = food_commodity.base_price * market.min_price_multiplier
     max_food_price = food_commodity.base_price * market.max_price_multiplier
-    min_ore_price = ore_commodity.base_price * market.min_price_multiplier
-    max_ore_price = ore_commodity.base_price * market.max_price_multiplier
+    min_minerals_price = minerals_commodity.base_price * market.min_price_multiplier
+    max_minerals_price = minerals_commodity.base_price * market.max_price_multiplier
 
     assert min_food_price <= market.prices[food_commodity.id] <= max_food_price
-    assert min_ore_price <= market.prices[ore_commodity.id] <= max_ore_price
+    assert min_minerals_price <= market.prices[minerals_commodity.id] <= max_minerals_price
 
 
 def test_world_with_missing_prices_sets_defaults_without_crash(universe_yaml_path):
@@ -105,16 +105,16 @@ def test_world_with_missing_prices_sets_defaults_without_crash(universe_yaml_pat
     assert sol_world.market is not None
     
     # Ensure some prices are missing to test default setting (e.g., for a new commodity if added later)
-    # For now, let's assume 'tools' might not be explicitly set in universe.yaml for sol
-    if CommodityId("tools") not in sol_world.market.prices:
-        sol_world.market.prices.pop(CommodityId("tools"), None) # Ensure it's not there
+    # For now, let's assume 'alloy' might not be explicitly set in universe.yaml for sol
+    if CommodityId("alloy") not in sol_world.market.prices:
+        sol_world.market.prices.pop(CommodityId("alloy"), None) # Ensure it's not there
 
-    # Update prices - should set default for 'tools' if not present
+    # Update prices - should set default for 'alloy' if not present
     update_prices(sol_world, state)
     
-    tools_commodity = commodity_registry.get(CommodityId("tools"))
-    assert tools_commodity.id in sol_world.market.prices
-    assert sol_world.market.prices[tools_commodity.id] >= tools_commodity.base_price * sol_world.market.min_price_multiplier
+    alloy_commodity = commodity_registry.get(CommodityId("alloy"))
+    assert alloy_commodity.id in sol_world.market.prices
+    assert sol_world.market.prices[alloy_commodity.id] >= alloy_commodity.base_price * sol_world.market.min_price_multiplier
 
 
 def test_simulation_step_with_market_updates_prices(universe_yaml_path):
@@ -124,23 +124,23 @@ def test_simulation_step_with_market_updates_prices(universe_yaml_path):
     
     # Capture initial prices for sol's market
     initial_food_price = sol_world.market.prices.get(CommodityId("food"))
-    initial_ore_price = sol_world.market.prices.get(CommodityId("ore"))
+    initial_minerals_price = sol_world.market.prices.get(CommodityId("minerals"))
 
     # Perform one simulation step
     report = step(state)
     
-    # Check if prices have changed (expect food price to increase, ore to decrease based on universe.yaml)
+    # Check if prices have changed (expect food price to increase, minerals to decrease based on universe.yaml)
     # Note: The gazette will contain detailed log entries if changes occurred
     food_entry_found = False
-    ore_entry_found = False
+    minerals_entry_found = False
     for entry in report.log.entries:
         if entry.type == "economy.prices.update" and entry.world_id == sol_world.id:
             if entry.details.get("commodity_id") == CommodityId("food"):
                 food_entry_found = True
-            if entry.details.get("commodity_id") == CommodityId("ore"):
-                ore_entry_found = True
+            if entry.details.get("commodity_id") == CommodityId("minerals"):
+                minerals_entry_found = True
 
     assert sol_world.market.prices[CommodityId("food")] < initial_food_price
-    assert sol_world.market.prices[CommodityId("ore")] < initial_ore_price
+    assert sol_world.market.prices[CommodityId("minerals")] < initial_minerals_price
     assert food_entry_found
-    assert ore_entry_found
+    assert minerals_entry_found

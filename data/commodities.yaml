@@ -1,13 +1,31 @@
 # data/commodities.yaml
+- id: "energy"
+  name: "Energy"
+  base_price: 1.0
+  category: "currency"
+  is_currency: True
+  decay_rate: 0.0 # Energy does not decay
+
+- id: "minerals"
+  name: "Minerals"
+  base_price: 5.0
+  category: "basic"
+  decay_rate: 0.0 # Minerals do not decay
+
 - id: "food"
   name: "Food"
   base_price: 10.0
-  perishable: true
-- id: "ore"
-  name: "Ore"
+  category: "basic"
+  decay_rate: 0.1 # Food decays over time
+
+- id: "alloy"
+  name: "Alloy"
   base_price: 50.0
-  perishable: false
-- id: "tools"
-  name: "Tools"
-  base_price: 100.0
-  perishable: false
+  category: "military"
+  decay_rate: 0.0 # Alloy does not decay
+
+- id: "consumer_goods"
+  name: "Consumer Goods"
+  base_price: 20.0
+  category: "welfare"
+  decay_rate: 0.05 # Consumer goods have a partial burn/decay

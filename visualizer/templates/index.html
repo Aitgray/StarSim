@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarSim Universe Visualizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>StarSim Universe Visualizer</h1>
+    <p class="instructions">Drag nodes (circles) to rearrange the layout. Hover over a node for details.</p>
+    <div id="universe-controls" class="controls">
+        <button id="reverse-button">Reverse</button>
+        <button id="pause-button">Pause</button>
+        <button id="play-button">Play</button>
+    </div>
+    <div id="visualizer-container">
+        <svg id="universe-svg"></svg>
+    </div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <div id="system-detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modal-system-name"></h2>
+            <p>ID: <span id="modal-system-id"></span></p>
+            <p>Stability: <span id="modal-system-stability"></span></p>
+            <p>Prosperity: <span id="modal-system-prosperity"></span></p>
+            <p>Planets: <span id="modal-system-planets-count"></span></p>
+            
+            <h3>Aggregated Resources</h3>
+            <div id="modal-aggregated-resources"></div>
+
+            <h3 style="margin-top: 20px;">System Visualization</h3>
+            <div id="system-visualization-container">
+                <svg id="system-visualization-svg"></svg>
+            </div>
+
+            <h3>Planets</h3>
+            <div id="modal-detailed-planets"></div>
+        </div>
+    </div>
+</body>
+</html>

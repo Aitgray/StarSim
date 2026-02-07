@@ -1,0 +1,85 @@
+# data/generation/planet_types.yaml
+planet_types:
+  - id: "continental"
+    name: "Continental World"
+    weight: 12
+    habitability_distribution:
+      - band: [0.70, 0.95]
+        weight: 70
+      - band: [0.50, 0.70]
+        weight: 25
+      - band: [0.20, 0.50]
+        weight: 5
+    resource_tables:
+      habitable:
+        when_habitability_gte: 0.60
+        potentials:
+          energy: {range: [1, 4]}
+          minerals: {range: [1, 3]}
+          food: {range: [2, 6]}
+          alloy: {range: [0, 1]}
+          consumer_goods: {range: [1, 3]}
+      inhospitable:
+        when_habitability_lt: 0.60
+        potentials:
+          energy: {range: [1, 3]}
+          minerals: {range: [1, 4]}
+          food: {range: [0, 2]}
+          alloy: {range: [0, 1]}
+          consumer_goods: {range: [0, 2]}
+
+  - id: "desert"
+    name: "Desert World"
+    weight: 8
+    habitability_distribution:
+      - band: [0.30, 0.60]
+        weight: 60
+      - band: [0.10, 0.30]
+        weight: 35
+      - band: [0.00, 0.10]
+        weight: 5
+    resource_tables:
+      habitable:
+        when_habitability_gte: 0.30
+        potentials:
+          energy: {range: [2, 5]}
+          minerals: {range: [2, 4]}
+          food: {range: [0, 1]}
+          alloy: {range: [0, 1]}
+          consumer_goods: {range: [0, 2]}
+      inhospitable:
+        when_habitability_lt: 0.30
+        potentials:
+          energy: {range: [1, 3]}
+          minerals: {range: [1, 5]}
+          food: {range: [0, 0]}
+          alloy: {range: [0, 1]}
+          consumer_goods: {range: [0, 1]}
+
+  - id: "ocean"
+    name: "Ocean World"
+    weight: 10
+    habitability_distribution:
+      - band: [0.60, 0.85]
+        weight: 65
+      - band: [0.40, 0.60]
+        weight: 30
+      - band: [0.10, 0.40]
+        weight: 5
+    resource_tables:
+      habitable:
+        when_habitability_gte: 0.50
+        potentials:
+          energy: {range: [1, 3]}
+          minerals: {range: [0, 2]}
+          food: {range: [3, 7]}
+          alloy: {range: [0, 1]}
+          consumer_goods: {range: [1, 4]}
+      inhospitable:
+        when_habitability_lt: 0.50
+        potentials:
+          energy: {range: [1, 2]}
+          minerals: {range: [0, 1]}
+          food: {range: [1, 3]}
+          alloy: {range: [0, 0]}
+          consumer_goods: {range: [0, 1]}

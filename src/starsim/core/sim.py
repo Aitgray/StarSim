@@ -6,6 +6,8 @@ from ..economy.market import update_prices
 from ..economy.consumption import consume # Import consume
 from ..economy.production import produce # Import produce
 from ..economy.trade import process_trade # Import process_trade
+from ..economy.investment import invest_civilian, invest_military # Import investment functions
+from ..economy.upkeep import apply_upkeep # Import upkeep function
 from ..factions.integrate import apply_faction_actions # Import apply_faction_actions
 from ..events.generator import generate_events # Import generate_events
 from ..events.effects import apply_effect # Import apply_effect
@@ -65,7 +67,24 @@ def step(state: UniverseState) -> TickReport:
         else:
             log.add_entry("economy.production", state.tick, world_id=world.id, reason="No industry or market, no production.")
     
-    # 3. economy.trade
+    # 3. economy.investment (Milestone 17)
+    for world in state.worlds.values():
+        if world.industry and world.market:
+            invest_civilian(world, state)
+            invest_military(world, state)
+            log.add_entry("economy.investment", state.tick, world_id=world.id, reason="Investment decisions made.")
+        else:
+            log.add_entry("economy.investment", state.tick, world_id=world.id, reason="No industry or market, no investment.")
+
+    # 4. economy.upkeep (New Stage for Milestone 18)
+    for world in state.worlds.values():
+        if world.market and world.population and world.industry:
+            apply_upkeep(world, state)
+            log.add_entry("economy.upkeep", state.tick, world_id=world.id, reason="Energy upkeep applied.")
+        else:
+            log.add_entry("economy.upkeep", state.tick, world_id=world.id, reason="No market, population, or industry, no upkeep.")
+
+    # 5. economy.trade
     arrived_shipments = process_trade(state, allow_new_trades=True)
     if state.active_shipments:
         log.add_entry(
@@ -84,7 +103,7 @@ def step(state: UniverseState) -> TickReport:
     else:
         log.add_entry("economy.trade", state.tick, reason="No active trade or arrivals.")
     
-    # 4. economy.prices
+    # 6. economy.prices
     for world in state.worlds.values():
         if world.market:
             initial_prices = {c_id: price for c_id, price in world.market.prices.items()} # Capture initial state for logging
@@ -103,11 +122,11 @@ def step(state: UniverseState) -> TickReport:
         else:
             log.add_entry("economy.prices", state.tick, world_id=world.id, reason="No market in world, no price update.")
 
-    # 5. factions.step
+    # 7. factions.step
     apply_faction_actions(state)
     log.add_entry("factions.step", state.tick, reason="Faction actions applied.")
     
-    # 6. events.roll
+    # 8. events.roll
     events_this_tick = generate_events(state)
     if events_this_tick:
         for event_def, target_world_id in events_this_tick:

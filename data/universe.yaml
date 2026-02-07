@@ -1,78 +1,29 @@
 # data/universe.yaml
 seed: 42
-worlds:
-  - id: "sol"
-    name: "Sol"
-    tags: ["capital", "core"]
-    market:
-      inventory:
-        food: 50.0
-        ore: 20.0
-      prices:
-        food: 11.0
-        ore: 55.0
-      targets:
-        food: 100.0 # Target more food than current inventory
-        ore: 10.0 # Target less ore than current inventory
-    population:
-      size: 1000000
-      growth_rate: 0.01
-      needs:
-        food: 0.0001 # 0.0001 units of food per capita per tick
-    industry:
-      caps:
-        farm_food: 10.0 # Max 10 production units
-        mine_ore: 10.0 # Max 10 production units
-        assemble_tools: 50.0 # Max 50 production units
-    factions:
-      influence:
-        "human_alliance": 1.0 # Human Alliance controls Sol initially
-      control: "human_alliance"
-  - id: "alpha-centauri"
-    name: "Alpha Centauri"
-    tags: ["industrial"]
-    factions:
-      influence:
-        "xeno_coalition": 0.8
-        "human_alliance": 0.2
-  - id: "proxima-centauri"
-    name: "Proxima Centauri"
-    tags: []
-    factions:
-      influence:
-        "xeno_coalition": 0.5
-        "human_alliance": 0.5
+worlds: [] # Removed specific worlds
 
 factions:
   - id: "human_alliance"
     name: "Human Alliance"
+    color: "#007BFF" # Brighter Blue
     traits: ["expansionist"]
     weights:
       economic_value: 1.0
       military_value: 0.5
+    capital_world_id: null # Will be assigned dynamically
+    desired_resources:
+      food: 1.0
+      consumer_goods: 0.8
   - id: "xeno_coalition"
     name: "Xeno Coalition"
+    color: "#DC3545" # Brighter Red
     traits: ["aggressive"]
     weights:
       economic_value: 0.8
       military_value: 1.2
+    capital_world_id: null # Will be assigned dynamically
+    desired_resources:
+      minerals: 1.0
+      energy: 0.7
 
-lanes:
-  - id: "sol-ac"
-    a: "sol"
-    b: "alpha-centauri"
-    distance: 4.3
-    hazard: 0.1
-    capacity: 100
-  - id: "sol-pc"
-    a: "sol"
-    b: "proxima-centauri"
-    distance: 4.2
-    hazard: 0.2
-    capacity: 50
-  - id: "ac-pc"
-    a: "alpha-centauri"
-    b: "proxima-centauri"
-    distance: 0.1
-    hazard: 0.8
-    capacity: 20
+lanes: [] # Removed specific lanes

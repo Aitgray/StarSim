@@ -13,6 +13,7 @@ from ..logistics.capacity import LaneCapacity
 from ..factions.model import Faction, WorldFactionState # Import Faction, WorldFactionState
 from ..events.model import EventDef # Import EventDef
 from ..events.registry import EventRegistry # Import EventRegistry
+from ..generation.model import Planet # Import Planet
 
 
 def to_dict(state: UniverseState) -> Dict[str, Any]:
@@ -28,6 +29,19 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
             "tags": list(world.tags),
             "scarcity": world.scarcity,
             "unrest": world.unrest,
+            "food_balance": world.food_balance, # New field
+            "starvation_level": world.starvation_level, # New field
+            "consumer_goods_balance": world.consumer_goods_balance, # New field
+            "consumer_goods_shortage_level": world.consumer_goods_shortage_level, # New field
+            "planets": [
+                {
+                    "type": planet.type,
+                    "habitability": planet.habitability,
+                    "resource_potentials": {c_id: val for c_id, val in planet.resource_potentials.items()},
+                    "tags": list(planet.tags),
+                }
+                for planet in world.planets
+            ]
         }
         if world.market:
             world_dict["market"] = {
@@ -40,6 +54,10 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
                 "size": world.population.size,
                 "growth_rate": world.population.growth_rate,
                 "needs": {c_id: qty for c_id, qty in world.population.needs.items()},
+                "food_required_per_capita_per_tick": world.population.food_required_per_capita_per_tick,
+                "consumer_goods_required_per_capita_per_tick": world.population.consumer_goods_required_per_capita_per_tick,
+                "consumer_goods_excess_burn_rate": world.population.consumer_goods_excess_burn_rate,
+                "energy_upkeep_per_capita_per_tick": world.population.energy_upkeep_per_capita_per_tick,
             }
         if world.industry:
             world_dict["industry"] = {
@@ -148,6 +166,10 @@ def from_dict(data: Dict[str, Any]) -> UniverseState:
                 size=pop_data.get('size', 0),
                 growth_rate=pop_data.get('growth_rate', 0.0),
                 needs=needs,
+                food_required_per_capita_per_tick=pop_data.get('food_required_per_capita_per_tick', 0.0001),
+                consumer_goods_required_per_capita_per_tick=pop_data.get('consumer_goods_required_per_capita_per_tick', 0.0001),
+                consumer_goods_excess_burn_rate=pop_data.get('consumer_goods_excess_burn_rate', 0.5),
+                energy_upkeep_per_capita_per_tick=pop_data.get('energy_upkeep_per_capita_per_tick', 0.0001),
             )
 
         industry = None
@@ -180,6 +202,19 @@ def from_dict(data: Dict[str, Any]) -> UniverseState:
             tags=set(w_data.get('tags', [])),
             scarcity=w_data.get('scarcity', 0.0),
             unrest=w_data.get('unrest', 0.0),
+            food_balance=w_data.get('food_balance', 0.0),
+            starvation_level=w_data.get('starvation_level', 0.0),
+            consumer_goods_balance=w_data.get('consumer_goods_balance', 0.0),
+            consumer_goods_shortage_level=w_data.get('consumer_goods_shortage_level', 0.0),
+            planets=[
+                Planet(
+                    type=p_data['type'],
+                    habitability=p_data['habitability'],
+                    resource_potentials={CommodityId(c_id): val for c_id, val in p_data['resource_potentials'].items()},
+                    tags=set(p_data['tags']),
+                )
+                for p_data in w_data.get('planets', [])
+            ],
             market=market,
             population=population,
             industry=industry,

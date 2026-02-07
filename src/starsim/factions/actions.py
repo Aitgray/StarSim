@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from ..core.ids import FactionId, WorldId, LaneId, RecipeId # Import RecipeId
+from ..economy.investment import invest_civilian, invest_military # Import investment functions
+
 if TYPE_CHECKING:
-    from ..core.ids import FactionId, WorldId, LaneId
     from ..core.state import UniverseState
     from ..world.model import World
     from .model import Faction
@@ -66,5 +68,27 @@ def aid_world(faction_id: FactionId, world_id: WorldId, state: UniverseState) ->
     if world:
         world.stability = min(1.0, world.stability + 0.05)
         world.prosperity = min(1.0, world.prosperity + 0.05)
+        return True
+    return False
+
+
+def invest_civilian_action(faction_id: FactionId, world_id: WorldId, state: UniverseState) -> bool:
+    """
+    Triggers civilian investment in a world.
+    """
+    world = state.worlds.get(world_id)
+    if world:
+        invest_civilian(world, state)
+        return True
+    return False
+
+
+def invest_military_action(faction_id: FactionId, world_id: WorldId, state: UniverseState) -> bool:
+    """
+    Triggers military investment in a world.
+    """
+    world = state.worlds.get(world_id)
+    if world:
+        invest_military(world, state)
         return True
     return False

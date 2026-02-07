@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from ..core.ids import FactionId, WorldId, LaneId
     from .model import Faction
     from .ai import select_action
-    from .actions import expand_influence, reinforce, raid_lane, patrol_lane, aid_world
+    from .actions import expand_influence, reinforce, raid_lane, patrol_lane, aid_world, invest_civilian_action, invest_military_action
 
 
 def apply_faction_actions(state: UniverseState):
@@ -34,6 +34,10 @@ def apply_faction_actions(state: UniverseState):
             success = patrol_lane(faction_id, LaneId(target_id), state)
         elif action_type == "aid_world" and target_id:
             success = aid_world(faction_id, WorldId(target_id), state)
+        elif action_type == "invest_civilian" and target_id:
+            success = invest_civilian_action(faction_id, WorldId(target_id), state)
+        elif action_type == "invest_military" and target_id:
+            success = invest_military_action(faction_id, WorldId(target_id), state)
         
         # Log the action
         if success:

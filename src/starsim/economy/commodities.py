@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Any
 import yaml
@@ -11,7 +11,9 @@ class Commodity:
     id: CommodityId
     name: str
     base_price: float
-    perishable: bool
+    category: str = "basic" # e.g., "basic", "refined", "military", "welfare", "currency"
+    is_currency: bool = False
+    decay_rate: float = 0.0 # Rate at which this commodity decays/burns off per tick
 
 
 class CommodityRegistry:
@@ -27,7 +29,9 @@ class CommodityRegistry:
                 id=CommodityId(c_data['id']),
                 name=c_data['name'],
                 base_price=c_data['base_price'],
-                perishable=c_data['perishable']
+                category=c_data.get('category', 'basic'),
+                is_currency=c_data.get('is_currency', False),
+                decay_rate=c_data.get('decay_rate', 0.0)
             )
             self._commodities[commodity.id] = commodity
 

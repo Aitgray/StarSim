@@ -21,12 +21,12 @@ def world_with_industry() -> World:
     
     market = Market()
     market.inventory.add(CommodityId("food"), 0.0) # No initial food
-    market.inventory.add(CommodityId("ore"), 100.0) # Some ore for tools
+    market.inventory.add(CommodityId("minerals"), 100.0) # Some minerals for alloys
     world.market = market
 
     industry = Industry(caps={
         RecipeId("farm_food"): 100.0, # Produces 100 food
-        RecipeId("assemble_tools"): 10.0 # Produces 10 tools, needs 100 ore
+        RecipeId("assemble_alloys"): 10.0 # Produces 10 alloys, needs 100 minerals
     })
     world.industry = industry
     
@@ -58,30 +58,30 @@ def test_production_limited_by_input_availability(universe_state_for_production)
     market = world.market
     industry = world.industry
 
-    # Set ore to only allow production of 5 tools (needs 10 ore per tool, so 50 ore total)
-    market.inventory[CommodityId("ore")] = 50.0 
+    # Set minerals to only allow production of 5 alloys (needs 10 minerals per alloy, so 50 minerals total)
+    market.inventory[CommodityId("minerals")] = 50.0 
     
-    initial_ore = market.inventory.get(CommodityId("ore"))
-    initial_tools = market.inventory.get(CommodityId("tools"))
+    initial_minerals = market.inventory.get(CommodityId("minerals"))
+    initial_alloys = market.inventory.get(CommodityId("alloy"))
     
     produce(world, universe_state_for_production)
     
-    # assemble_tools cap is 10.0, but only 50 ore means max 5 tools can be produced
-    assert market.inventory.get(CommodityId("ore")) == pytest.approx(initial_ore - 50.0)
-    assert market.inventory.get(CommodityId("tools")) == pytest.approx(initial_tools + 5.0)
+    # assemble_alloys cap is 10.0, but only 50 minerals means max 5 alloys can be produced
+    assert market.inventory.get(CommodityId("minerals")) == pytest.approx(initial_minerals - 50.0)
+    assert market.inventory.get(CommodityId("alloy")) == pytest.approx(initial_alloys + 5.0)
 
 
 def test_no_negative_inventory_after_production(universe_state_for_production):
     world = universe_state_for_production.worlds[WorldId("test_industry_world")]
     market = world.market
 
-    # Set ore to a very low amount, e.g., 5.0, so it's less than required for even one tool
-    market.inventory[CommodityId("ore")] = 5.0
+    # Set minerals to a very low amount, e.g., 5.0, so it's less than required for even one alloy
+    market.inventory[CommodityId("minerals")] = 5.0
     
     produce(world, universe_state_for_production)
     
-    assert market.inventory.get(CommodityId("ore")) >= 0.0
-    assert market.inventory.get(CommodityId("tools")) >= 0.0
+    assert market.inventory.get(CommodityId("minerals")) >= 0.0
+    assert market.inventory.get(CommodityId("alloy")) >= 0.0
 
 
 def test_agri_world_produces_food_and_stabilizes_self_integration():

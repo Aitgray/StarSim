@@ -1,0 +1,219 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+}
+
+h1 {
+    color: #00bcd4;
+    text-align: center;
+}
+
+#visualizer-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    border: 1px solid #0f3460;
+    background-color: #0f3460;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#universe-svg {
+    width: 100%;
+    height: 80vh; /* Changed from fixed px to viewport height for dynamic scaling */
+    background-color: #0f3460;
+}
+
+.node {
+    fill: #00bcd4;
+    stroke: #e0e0e0;
+    stroke-width: 1px;
+    cursor: pointer;
+}
+
+.node-label {
+    fill: #e0e0e0;
+    font-size: 10px;
+    text-anchor: middle;
+    pointer-events: none; /* Make labels not interfere with mouse events on nodes */
+}
+
+.link {
+    stroke: #e0e0e0;
+    stroke-opacity: 0.6;
+    stroke-width: 1px;
+}
+
+.tooltip {
+    position: fixed; /* Changed from absolute to fixed for reliable positioning */
+    background-color: #333; /* Restored original background */
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0; /* Set opacity back to 0 */
+    transition: opacity 0.2s;
+    font-size: 12px;
+    border: 1px solid #555; /* Restored original border */
+    white-space: pre-wrap; /* Allows newlines in tooltip text */
+    z-index: 101; /* Ensure it's on top */
+}
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex; /* Show the modal */
+}
+
+.modal-content {
+    background-color: #0f3460;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #00bcd4;
+    width: 80%; /* Could be more responsive */
+    max-width: 800px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    border-radius: 8px;
+}
+
+.close-button {
+    color: #e0e0e0;
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #00bcd4;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-content h2, .modal-content h3 {
+    color: #00bcd4;
+    border-bottom: 1px solid #0f3460;
+    padding-bottom: 5px;
+    margin-top: 20px;
+}
+
+.modal-content p {
+    margin-bottom: 5px;
+}
+
+.modal-content ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.modal-content li {
+    background-color: #1a1a2e;
+    margin-bottom: 5px;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.planet-details {
+    margin-bottom: 15px;
+    border: 1px solid #0f3460;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #1a1a2e;
+}
+
+.planet-details h4 {
+    color: #00bcd4;
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+.planet-resource-item {
+    font-size: 0.9em;
+    color: #b0b0b0;
+}
+
+#system-visualization-container {
+    width: 100%;
+    height: 300px; /* Fixed height for the system visualization */
+    background-color: #0f3460;
+    border: 1px solid #00bcd4;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Added for positioning controls */
+}
+
+#system-visualization-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.controls {
+    display: flex;
+    justify-content: center; /* Center the controls */
+    gap: 10px; /* Space between buttons */
+    margin-top: 10px;
+    margin-bottom: 20px;
+    z-index: 10; /* Ensure controls are above other elements if needed */
+}
+
+.controls button {
+    background-color: #00bcd4;
+    color: #0f3460;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+.controls button:hover {
+    background-color: #008f9e;
+}
+
+/* Styles for elements within the system visualization SVG */
+.star {
+    fill: yellow; /* Make star solid yellow for debugging */
+    stroke: black; /* Add a black border for debugging */
+    stroke-width: 2px;
+}
+
+.planet {
+    fill: blue; /* Make planet solid blue for debugging */
+    stroke: black; /* Add a black border for debugging */
+    stroke-width: 1px;
+}
+
+.planet-orbit {
+    fill: none;
+    stroke: #444;
+    stroke-width: 0.5px;
+    stroke-dasharray: 2 2;
+}
+
+

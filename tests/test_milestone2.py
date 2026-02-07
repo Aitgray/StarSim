@@ -62,10 +62,23 @@ def test_load_save_load_round_trip(universe_yaml_path):
     initial_dict = to_dict(initial_state)
     loaded_dict = to_dict(loaded_state)
 
+    # Remove derived fields that are not part of serialization comparison
+    for d in [initial_dict, loaded_dict]:
+        for world_data in d.get('worlds', []):
+            world_data.pop('_adj', None) # Remove derived adjacency if present
+
     # Sort lists to ensure order doesn't matter
     initial_dict['worlds'].sort(key=lambda x: x['id'])
     loaded_dict['worlds'].sort(key=lambda x: x['id'])
     initial_dict['lanes'].sort(key=lambda x: x['id'])
     loaded_dict['lanes'].sort(key=lambda x: x['id'])
+
+    # Sort planets within worlds for comparison
+    for world_data in initial_dict['worlds']:
+        if 'planets' in world_data:
+            world_data['planets'].sort(key=lambda x: x['type'])
+    for world_data in loaded_dict['worlds']:
+        if 'planets' in world_data:
+            world_data['planets'].sort(key=lambda x: x['type'])
 
     assert initial_dict == loaded_dict

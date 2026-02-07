@@ -1,8 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, Set, TYPE_CHECKING
+from typing import Dict, Set, TYPE_CHECKING, Optional
+from collections import defaultdict # Added defaultdict import
 
-from ..core.ids import FactionId, WorldId
+from ..core.ids import FactionId, WorldId, CommodityId # Added CommodityId
 
 if TYPE_CHECKING:
     from ..world.model import World
@@ -12,9 +13,12 @@ if TYPE_CHECKING:
 class Faction:
     id: FactionId
     name: str
+    color: str = "#CCCCCC" # New: Default color for the faction
     traits: Set[str] = field(default_factory=set)
     # Weights for various decisions or influences (e.g., preference for certain commodity types)
     weights: Dict[str, float] = field(default_factory=dict)
+    capital_world_id: Optional[WorldId] = None # New: The ID of this faction's capital system
+    desired_resources: Dict[CommodityId, float] = field(default_factory=dict) # New: Resource preferences/needs
 
 
 @dataclass

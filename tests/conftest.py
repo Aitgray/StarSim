@@ -22,3 +22,20 @@ def setup_registries():
 @pytest.fixture
 def universe_yaml_path() -> Path:
     return Path("data/universe.yaml")
+
+def pytest_addoption(parser):
+    """Adds the --update-goldens command-line option."""
+    parser.addoption(
+        "--update-goldens", action="store_true", default=False, help="Update golden regression files."
+    )
+
+def pytest_configure(config):
+    """Ensures --update-goldens is only used with 'test_generator_regression.py'."""
+    if config.option.update_goldens:
+        if not any("test_generator_regression.py" in arg for arg in config.args):
+            # Only warn if the user hasn't explicitly specified a file/dir pattern
+            config.warn(
+                "USERWARNING",
+                "The --update-goldens flag is intended for use with test_generator_regression.py. "
+                "Specify the test file explicitly or use it carefully.",
+            )

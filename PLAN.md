@@ -2,577 +2,527 @@ Below is an actionable, component-by-component build plan designed to be **LLM/a
 
 ---
 
-# StarSim Build Plan (Agent-Executable)
-
-## Global Constraints (apply to every milestone)
-
-* **Deterministic simulation:** all randomness comes from `rng = random.Random(seed)` owned by `UniverseState` (no global `random` calls).
-* **State is serializable:** “source of truth” is dicts keyed by string IDs; avoid deep object pointer graphs.
-* **No hidden coupling:** modules communicate via explicit function inputs/outputs and well-defined dataclasses.
-* **Every milestone adds tests** and keeps all tests green.
-* **Logging is explainable:** every tick produces an “audit trail” of why major deltas happened.
-
----
-
-## Milestone 0 — Repo + Tooling Baseline (CI/CD-ready skeleton)
+## Milestone 13 — Canonical Resource Model (5 primary types)
 
 ### Objective
 
-Create a project skeleton with formatting, linting, typing, tests, and CI.
+Standardize the resource layer to the five primary Stellaris-like resources:
+
+* **Energy** (currency / baseline utility)
+* **Minerals** (construction inputs; refinery input)
+* **Food** (population sustain/growth)
+* **Alloy** (military construction)
+* **Consumer Goods** (QoL; stability buffer; partially “burns off”)
 
 ### Deliverables
 
-* `pyproject.toml` using:
+* `economy/resources.py` (or update `commodities.yaml` + `commodities.py`)
 
-  * formatter: `ruff format` (or `black`)
-  * linter: `ruff`
-  * type check: `mypy` (optional but recommended)
-  * tests: `pytest`
-* `src/starsim/` package scaffold
-* GitHub Actions workflow:
+  * Define canonical IDs: `energy`, `minerals`, `food`, `alloy`, `consumer_goods`
+  * Mark metadata:
 
-  * run `ruff`, `mypy`, `pytest` on PR/push
-* pre-commit config (optional but recommended):
-
-  * ruff, formatting, trailing whitespace, end-of-file, etc.
+    * `category`: basic / refined / military / welfare
+    * `is_currency`: energy = true
+    * `decay/consumption_behavior`: consumer goods partial burn
+* Migrate any existing commodity usage to these IDs (or define a compatibility mapping layer).
 
 ### Tests
 
-* Smoke test: `pytest -q` runs and passes with one trivial test.
+* Unit: commodity registry loads and contains exactly the five primary resources (plus any optional extras if you allow them).
+* Integration: existing scenario still loads; if incompatible, create `data/scenarios/v2_*` and add a migration note.
 
 ### Done when
 
-* `git push` triggers CI; CI passes.
-* `pip install -e .` works.
+* The sim runs with these resources without crashes and prices/inventories exist for them.
 
 ---
 
-## Milestone 1 — Core Types + State Container
+## Milestone 14 — Population Food Constraint + Growth/Decline
 
 ### Objective
 
-Define the minimal state model with ID registries and deterministic RNG.
+Make **food** a hard constraint on population sustain and growth.
+
+### Mechanics (simple, table-friendly)
+
+* Each world with population has:
+
+  * `food_required_per_tick = pop_size * rate`
+  * If food available < required:
+
+    * apply shortage ratio → **population declines**
+    * optionally increases unrest / reduces stability
+  * If food available ≥ required:
+
+    * population grows at base growth rate, modulated by stability/prosperity
 
 ### Deliverables
 
-* `core/ids.py`: type aliases `WorldId`, `LaneId`, `CommodityId`, `FactionId`
+* Update `economy/consumption.py`:
 
-* `core/rng.py`: wrapper or helper for seeded RNG
-
-* `core/state.py`:
-
-  * `UniverseState` with:
-
-    * `seed: int`
-    * `tick: int`
-    * `rng: random.Random`
-    * `worlds: dict[WorldId, World]`
-    * `lanes: dict[LaneId, Lane]`
-    * `adj: dict[WorldId, list[LaneId]]` (derived)
-  * methods:
-
-    * `rebuild_adjacency()`
-    * `neighbors(world_id) -> list[WorldId]`
-    * `lanes_from(world_id) -> list[Lane]`
-
-* `world/model.py`:
-
-  * `World` dataclass with:
-
-    * `id`, `name`
-    * core stats: `stability`, `prosperity`, `tech`
-    * `tags: set[str]`
-    * optional components: `market: Market|None`, `population: Population|None`, etc. (can be placeholders now)
-  * `Lane` dataclass:
-
-    * `id`, `a`, `b`
-    * `distance`, `hazard`, `capacity`
+  * food requirement explicit
+  * population delta computed deterministically
+* Add a world pressure metric: `food_balance` and/or `starvation_level`
 
 ### Tests
 
 * Unit:
 
-  * adjacency rebuild correctness
-  * `neighbors()` returns expected IDs
-* Determinism:
-
-  * same seed → same first 10 RNG draws (through state-owned RNG)
-
-### Done when
-
-* You can create a tiny state in-memory, rebuild adjacency, and query neighbors with tests passing.
-
----
-
-## Milestone 2 — Serialization + Scenario Loading (Data-driven)
-
-### Objective
-
-Load a universe from YAML/JSON and save/load state snapshots.
-
-### Deliverables
-
-* `world/load.py`
-
-  * load functions:
-
-    * `load_universe(path) -> UniverseState`
-  * schema checks (hard errors):
-
-    * unknown world referenced by a lane
-    * duplicate IDs
-
-* `io/save_load.py`
-
-  * `to_dict(state) -> dict`
-  * `from_dict(d) -> UniverseState`
-  * JSON round-trip support
-
-* `data/universe.yaml` minimal sample (3 worlds, 3 lanes)
-
-### Tests
-
-* Unit:
-
-  * YAML load produces correct world/lane counts
-  * invalid lane reference raises error
+  * insufficient food decreases population
+  * sustained sufficient food increases population within bounds
 * Integration:
 
-  * load → save → load results in equivalent state (ignoring derived adjacency)
+  * in a scenario with one food producer and one consumer, trade can prevent decline.
 
 ### Done when
 
-* You can edit YAML to add a planet and re-run tests; nothing breaks.
+* In gazette output, food shortages cause population decline with clear audit log reasons.
 
 ---
 
-## Milestone 3 — Simulation Engine + Audit Log
+## Milestone 15 — Consumer Goods QoL + Stability Buffer + Partial Burn
 
 ### Objective
 
-Create the tick loop with a stable step ordering and structured logs.
+Implement consumer goods as “semi-required + stability amplifier” with partial overconsumption.
+
+### Mechanics (GM-friendly)
+
+Per tick:
+
+1. Consumer goods have a **baseline requirement** (small) like food but not lethal:
+
+   * shortage reduces stability/prosperity mildly, increases unrest
+2. If supply exceeds baseline:
+
+   * apply **stability bonus** based on “excess per capita”
+   * *burn off* some fraction of excess (so stockpiles don’t grow without bound)
 
 ### Deliverables
 
-* `core/sim.py`
+* `economy/consumption.py` updates:
 
-  * `step(state: UniverseState) -> TickReport`
-  * fixed order (placeholder stages):
+  * `consumer_goods_required_per_tick`
+  * `consumer_goods_excess_burn_rate` (e.g. 30–60% of excess)
+* `world/model.py` / pressure model:
 
-    1. economy.production
-    2. economy.consumption
-    3. economy.trade
-    4. economy.prices
-    5. factions.step
-    6. events.roll
-* `core/log.py`
-
-  * `AuditLog` accumulating entries:
-
-    * `type`, `world_id`, `faction_id`, `delta`, `reason`, `details`
-* `reports/gazette.py`
-
-  * text summary from audit log
+  * incorporate “standard of living” effect on stability
 
 ### Tests
 
 * Unit:
 
-  * `step()` increments tick exactly once
-  * log entries appear when placeholder actions occur
-* Determinism:
-
-  * same seed + same initial state → identical TickReport content for N ticks
-
-### Done when
-
-* Running `scripts/run_sim.py --ticks 12` prints a repeatable gazette.
-
----
-
-## Milestone 4 — Commodities + Market Component (Heuristic pricing)
-
-### Objective
-
-Implement commodities, inventories, and price adjustment rules.
-
-### Deliverables
-
-* `economy/commodities.py`
-
-  * commodity registry loaded from `data/commodities.yaml`
-* `economy/inventory.py`
-
-  * `Inventory` as `dict[CommodityId, float]` + helpers:
-
-    * `get(qty=0 default)`, `add`, `remove_clamped`
-* `economy/market.py`
-
-  * `Market` component:
-
-    * `inventory`, `prices`, `targets` (days-of-cover target per commodity)
-  * `update_prices(world, state)`:
-
-    * compare inventory to target cover; adjust via bounded multiplier
-
-### Tests
-
-* Unit:
-
-  * price increases when inventory below target
-  * price decreases when inventory above target
-  * price remains within bounds (min/max clamp)
+  * excess consumer goods raises stability (bounded)
+  * excess is partially consumed (inventory decreases)
 * Integration:
 
-  * add a world with missing prices → defaults set without crash
+  * if trade supplies consumer goods, stability improves over several ticks.
 
 ### Done when
 
-* A world with a Market shows believable price motion over repeated ticks.
+* Consumer goods behave as a stabilizer and don’t accumulate infinitely.
 
 ---
 
-## Milestone 5 — Population + Consumption (needs → pressure)
+## Milestone 16 — Minerals Refining Chains → Alloy and Consumer Goods
 
 ### Objective
 
-Add population demand and shortage-driven instability.
+Implement the Stellaris-like refinement pathways:
+
+* Minerals → Alloy
+* Minerals → Consumer Goods
+
+…and ensure **energy** is the settlement/currency layer (your “prices” can be denominated in energy).
 
 ### Deliverables
 
-* `economy/consumption.py`
+* `data/recipes.yaml` new recipes:
 
-  * `Population` component:
-
-    * `size`, `growth_rate`, `needs: dict[CommodityId, float]`
-  * `consume(world)`:
-
-    * remove from market inventory according to needs
-    * compute `shortage_ratio` per commodity
-* `world/model.py` add:
-
-  * `pressure: dict[str, float]` or explicit fields:
-
-    * `scarcity`, `unrest`
-* `events` placeholder: “shortage increases unrest”
+  * `refine_alloy`: inputs `{minerals: x, energy: y}` outputs `{alloy: z}`
+  * `refine_consumer_goods`: inputs `{minerals: x, energy: y}` outputs `{consumer_goods: z}`
+* Update `economy/production.py` to support recipes involving energy.
+* Confirm `market.prices` are “energy per unit” (if you already have generic prices, just ensure energy is the numeraire in reporting).
 
 ### Tests
 
 * Unit:
 
-  * if inventory insufficient, shortage ratio > 0
-  * shortage increases unrest, decreases stability (bounded)
+  * recipe conversion respects input constraints
+  * energy input matters (no free refining)
 * Integration:
 
-  * two ticks with no food → instability worsens deterministically
+  * mineral-rich world becomes alloy exporter when it has refinery capacity.
 
 ### Done when
 
-* You see food/medicine shortages translate into world-level pressures.
+* Refining produces believable downstream effects and shows up in trade.
 
 ---
 
-## Milestone 6 — Production (recipes + capacity)
+## Milestone 17 — Construction Budgeting (Minerals civilian / Alloys military)
 
 ### Objective
 
-Implement industries that turn inputs into outputs with capacities.
+Add a minimal “construction economy” without turning this into a city builder.
+
+### Mechanics
+
+* Each world has a per-tick **build budget**:
+
+  * civilian projects consume **minerals** (and maybe energy upkeep)
+  * military projects consume **alloys**
+* You do not need a full building placement system. Track:
+
+  * `civilian_infrastructure_level` (mining, research, refining capacity)
+  * `military_infrastructure_level` (starbase, shipyard capacity)
+* Investments increase production caps, lane capacity, hazard reduction, etc.
 
 ### Deliverables
 
-* `economy/recipes.py` from `data/recipes.yaml`
-* `economy/production.py`
+* `economy/investment.py`:
 
-  * `Industry` component:
-
-    * `caps: dict[RecipeId, float]`
-  * `produce(world)`:
-
-    * for each recipe:
-
-      * compute max feasible by available inputs + cap
-      * consume inputs, add outputs
+  * `invest_civilian(world)` consumes minerals → increases selected industry caps
+  * `invest_military(world)` consumes alloys → increases garrison/defense/ship output proxy
+* Hook faction AI to prefer alloy investment during wars.
 
 ### Tests
 
 * Unit:
 
-  * production limited by input availability
-  * production limited by capacity
-  * no negative inventory
+  * investments consume correct resources
+  * caps increase deterministically and are bounded
 * Integration:
 
-  * an “agri world” produces food over time and stabilizes itself
+  * a peaceful faction invests in civilian; wartime shifts to military.
 
 ### Done when
 
-* Worlds can be set up as producers/consumers and behave sensibly.
+* Construction ties directly into your existing production/faction systems.
 
 ---
 
-## Milestone 7 — Trade + Logistics (simple arbitrage)
+## Milestone 18 — Energy as Currency and “Tax/Upkeep” Hooks
 
 ### Objective
 
-Move goods between worlds based on profit, distance, hazard, and capacity.
+Make energy functionally central: most actions/maintenance require energy, and it acts as the “economic blood.”
+
+### Mechanics (minimal, useful)
+
+* Each world has:
+
+  * `energy_upkeep` for population + infrastructure + garrisons
+* If energy deficit:
+
+  * stability/prosperity down, production caps throttled
+* Optional: factions can “tax” controlled worlds (energy siphon to faction budget).
 
 ### Deliverables
 
-* `logistics/shipping.py`
+* `economy/upkeep.py`:
 
-  * `Shipment`: commodity, qty, src, dst, eta_tick
+  * `apply_upkeep(world)` consumes energy, applies penalties if short
+* `factions/integrate.py`:
 
-* `economy/trade.py`
-
-  * build candidate trades along direct neighbor lanes:
-
-    * if `price_dst - price_src - shipping_cost > threshold`
-  * create shipments (respect lane capacity)
-  * arrivals add to dst inventory at eta
-
-* `logistics/capacity.py`
-
-  * track per-lane used capacity per tick
+  * control grants faction `energy_income` (optional but strong for strategy)
 
 ### Tests
 
-* Unit:
-
-  * profitable trades create shipments
-  * shipments arrive after travel time
-  * capacity limits prevent infinite shipping
-* Integration:
-
-  * create two worlds with price gradient; verify convergence reduces gradient over time
+* Unit: energy deficits reduce output/stability deterministically
+* Integration: faction with many worlds can fund more ops because of tax income
 
 ### Done when
 
-* The sim generates trade flows and the economy equalizes where lanes allow.
+* Energy meaningfully appears in “why things happened” logs.
 
 ---
 
-## Milestone 8 — Factions Model (presence, influence, control)
+# Procedural System/Planet Generator
+
+## Milestone 19 — Generator Data Schema (Plaintext, Weighted)
 
 ### Objective
 
-Represent faction state per world and basic control rules.
+Define a plaintext (YAML) template schema for system/planet generation: planet types, habitability bands, and resource potentials.
+
+### Required data files
+
+* `data/generation/planet_types.yaml`
+* `data/generation/habitability_tables.yaml`
+* `data/generation/system_templates.yaml` (optional: system archetypes)
+
+### Template requirements (what you asked for)
+
+For each planet type:
+
+* `weight` (how often it appears)
+* `habitability_distribution` (or a set of weighted bands)
+* resource potentials **dependent on habitability**:
+
+  * two (or more) tables per type, e.g. `habitable` vs `inhospitable`
+  * each table provides ranges or weighted bins for:
+
+    * energy, minerals, food, alloy, consumer_goods (as “extractable potential”)
 
 ### Deliverables
 
-* `factions/model.py`
-
-  * `Faction`: id, name, traits, weights
-  * per-world maps:
-
-    * `influence[faction][world]`
-    * `garrison[faction][world]`
-    * `control[world] -> faction|None` (derived from influence with hysteresis)
-* `factions/resolve.py`
-
-  * hysteresis thresholds: gain at 0.70, lose at 0.40
-  * control affects world modifiers:
-
-    * stability bonus, tax friction, lane patrol bias (later)
+* `generation/schema.md` describing YAML shape (for your future self + agent)
+* `generation/load.py` to parse and validate tables
 
 ### Tests
 
-* Unit:
-
-  * influence crossing threshold flips control
-  * hysteresis prevents flip-flop
-* Integration:
-
-  * control modifies event weights or stability in a deterministic way
+* Unit: schema validation catches missing fields, invalid weights, invalid ranges
+* Integration: generator loads tables and can sample 100 planets without errors
 
 ### Done when
 
-* You can set starting influence in YAML and see control changes.
+* You have a stable, validated template format.
 
 ---
 
-## Milestone 9 — Faction Decision Logic (greedy agent with inertia)
+## Milestone 20 — Planet Stat Model (Habitability + Resource Potential)
 
 ### Objective
 
-Implement per-faction action selection: compute world values, pick highest ROI actions.
+Add planet-level attributes that the economy can use:
+
+* `habitability` (0–1)
+* `resource_potential` (per resource)
+* optionally `planet_size`, `features/tags`
 
 ### Deliverables
 
-* `factions/ai.py`
+* `world/model.py` extend:
 
-  * `compute_world_value(faction, world, state) -> float`
+  * `World` gains `planets: list[Planet]` OR treat each planet as a sub-entity
+* `generation/model.py`:
 
-    * Econ: shipyards, food, industry output
-    * Geo: neighbor halo, hub score (degree-based ok)
-    * Symbolic: tags/capital/sacred
-    * Threat: rival influence nearby
-    * Cost: distance, enemy garrison, instability
-  * smoothing + commitment (anti-thrashing)
-* `factions/actions.py`
+  * `Planet`: type, habitability, potentials dict, tags
+* Decide how economy uses this:
 
-  * action defs:
-
-    * `expand_influence(world)`
-    * `reinforce(world)`
-    * `raid_lane(lane)`
-    * `patrol_lane(lane)`
-    * `aid_world(world)` (optional)
-* `factions/integrate.py`
-
-  * apply action effects to:
-
-    * influence/garrison
-    * lane hazard/capacity modifiers
-    * world stability/unrest
+  * simplest: world’s “industry caps” derive from planet potentials
 
 ### Tests
 
-* Unit:
-
-  * given a known state, top action is reproducible (seeded)
-  * commitment keeps target stable for N ticks
-* Integration:
-
-  * factions cause measurable lane hazard changes and economic disruption
+* Unit: planet potentials reflect habitability table selection
+* Integration: generated world converts potentials into initial production caps
 
 ### Done when
 
-* A 3–8 world scenario yields a believable “frontline” and tug-of-war.
+* A generated system produces worlds with sensible resource profiles.
 
 ---
 
-## Milestone 10 — Random Event System (pressure-weighted, table-driven)
+## Milestone 21 — System Generator (Create N Systems Deterministically)
 
 ### Objective
 
-Add events that are state-dependent, not pure noise.
+Generate star systems with a random number of planets, using weighted tables and deterministic seed.
+
+### Mechanics
+
+* `generate_system(seed, template_id)`:
+
+  1. roll planet count based on system template
+  2. for each planet:
+
+     * sample planet type weighted
+     * sample habitability from that type’s distribution
+     * choose correct resource potential table (based on habitability thresholds)
+     * sample potentials from weighted bins or ranges
+  3. aggregate planets into world-level properties
 
 ### Deliverables
 
-* `events/model.py`
+* `generation/system_gen.py` with:
 
-  * `EventDef`: id, base_weight, conditions, apply()
-* `events/generator.py`
-
-  * per world each tick:
-
-    * compute weights from pressures + tags + faction tension
-    * roll up to `k` events globally or per-world
-* `events/effects.py`
-
-  * effects change:
-
-    * inventory (loss/spoilage)
-    * stability/unrest
-    * lane hazard
-    * faction influence shifts
-* `data/events.yaml` (table-driven definitions)
+  * `generate_world(world_id, rng, template) -> World`
+  * `generate_universe(rng, n_systems) -> UniverseState` (optional)
+* CLI: `scripts/gen_universe.py --seed --n --out data/universe_generated.yaml`
 
 ### Tests
 
-* Unit:
-
-  * event weights increase under relevant pressures
-  * applying event produces bounded deltas
-* Integration:
-
-  * run 24 ticks; ensure at least one event fires; log shows reasons
+* Determinism: same seed => identical generated YAML
+* Distribution sanity: over many rolls, planet types approximate weights (allow tolerance)
 
 ### Done when
 
-* Gazette includes “why this happened” events tied to state.
+* You can generate a universe YAML and load it into the sim without manual edits.
 
 ---
 
-## Milestone 11 — Regression Harness + Scenario Testing
+## Milestone 22 — Economy Bootstrap From Generated Potentials
 
 ### Objective
 
-Prevent future changes from breaking outcomes silently.
+Turn planet potentials into actual starting state:
+
+* initial inventories
+* production capacities
+* population/habitability relationship
+
+### Rules (simple + Stellaris-flavored)
+
+* Habitability impacts:
+
+  * base stability/prosperity
+  * population growth cap
+  * effective output multiplier on food/consumer goods
+* Potentials map to industry caps:
+
+  * minerals potential -> mining cap
+  * food potential -> farming cap
+  * energy potential -> generator cap
+  * optional: allow refining (minerals -> alloys/CG) based on tech or infra
 
 ### Deliverables
 
-* `tests/test_regression_seeded.py`
+* `generation/bootstrap.py`:
 
-  * load a fixed scenario, run N ticks, compare:
+  * `apply_planet_potentials_to_world(world)`:
 
-    * selected summary metrics (not every float):
-
-      * top 3 prices per world
-      * control map
-      * total trade volume
-      * lane hazard distribution
-* `reports/world_cards.py` for quick human inspection
+    * set baseline production caps and/or inventories
+    * set default population size based on habitability
 
 ### Tests
 
-* Regression test is expected to fail only when you intentionally change model behavior.
+* Unit: higher habitability yields higher sustainable population/growth
+* Integration: generated worlds don’t instantly starve unless designed to
 
 ### Done when
 
-* You can refactor internals and trust “behavioral drift” is visible.
+* Generated universes run for 24 ticks with plausible stability and trade.
 
 ---
 
-## Milestone 12 — Developer UX (CLI + debugging tools)
+## Milestone 23 — Reports: Stellaris-style Resource + Stability Summary
 
 ### Objective
 
-Make it easy to run, inspect, and tweak.
+Make the output GM-useful: “resource ledger” per world and faction.
 
 ### Deliverables
 
-* `scripts/run_sim.py`
+* `reports/world_cards.py` add:
 
-  * args: `--seed`, `--ticks`, `--scenario`, `--dump-json`, `--gazette`
-* `scripts/inspect_world.py --world X`
-* “debug mode” to print action scoring for one faction
+  * net monthly income/deficit per resource
+  * food balance and pop trend
+  * stability changes due to consumer goods, unrest, energy upkeep
+* `reports/gazette.py` add:
+
+  * top 3 shortages (by severity)
+  * top 3 booms (by surplus)
+  * major faction shifts linked to resource drivers
 
 ### Tests
 
-* CLI smoke tests (optional) or just ensure scripts import cleanly.
+* Snapshot/regression: report format stable and includes required fields.
 
 ### Done when
 
-* You can iterate quickly: change YAML → run → read gazette.
+* You can read one page and improvise session hooks.
 
 ---
 
-# Quality Gates (CI/CD)
+## Milestone 24 — Regression Packs for Generator + Resource Economy
 
-## Required CI Jobs
+### Objective
 
-* `ruff check`
-* `ruff format --check`
-* `pytest`
-* (optional) `mypy`
+Protect against future refactors breaking generation or economic dynamics.
 
-## Required Practices
+### Deliverables
 
-* Every PR/change:
+* `tests/test_generator_regression.py`
 
-  * updates or adds tests
-  * maintains determinism for existing scenarios (unless intentionally changed)
-* Prefer “pure functions” for transforms; keep state mutation localized in `apply_*` functions.
+  * generate universe with seed X
+  * compare hash/normalized output of world list + planet summaries
+* `tests/test_resource_economy_regression.py`
 
----
+  * run scenario for N ticks and assert stable invariants:
 
-# Agent Execution Notes (how an LLM should work through this)
+    * no negative inventories
+    * population doesn’t explode without food
+    * consumer goods excess doesn’t grow unbounded
 
-* Implement milestones strictly in order.
-* After each milestone:
+### Done when
 
-  1. run tests
-  2. fix failing tests
-  3. run `scripts/run_sim.py` for a tiny scenario and paste output into a `notes/` log (optional)
-* Do not start a new milestone until:
-
-  * all tests are green
-  * `ruff` passes
+* You can safely tweak tables and immediately see intended vs unintended drift.
 
 ---
 
-If you want, I can also provide:
+# YAML Template Sketch (for your weighted tables)
 
-* a starter `pyproject.toml` + GitHub Actions YAML tailored for this,
-* and “starter data files” (`universe.yaml`, `commodities.yaml`, `recipes.yaml`, `factions.yaml`, `events.yaml`) that produce interesting output within ~12 ticks.
+This is intentionally “agent-friendly” and mod-friendly.
+
+```yaml
+# data/generation/planet_types.yaml
+planet_types:
+  - id: continental
+    weight: 12
+    habitability:
+      # weighted bands -> sample uniform within band
+      - band: [0.70, 0.95]
+        weight: 70
+      - band: [0.50, 0.70]
+        weight: 25
+      - band: [0.20, 0.50]
+        weight: 5
+
+    resource_tables:
+      habitable:
+        when_habitability_gte: 0.60
+        potentials:
+          energy: {range: [1, 4]}
+          minerals: {range: [1, 3]}
+          food: {range: [2, 6]}
+          alloy: {range: [0, 1]}
+          consumer_goods: {range: [1, 3]}
+      inhospitable:
+        when_habitability_lt: 0.60
+        potentials:
+          energy: {range: [1, 3]}
+          minerals: {range: [1, 4]}
+          food: {range: [0, 2]}
+          alloy: {range: [0, 1]}
+          consumer_goods: {range: [0, 2]}
+```
+
+If you prefer *weighted bins* instead of ranges:
+
+```yaml
+potentials:
+  minerals:
+    bins:
+      - value: 0
+        weight: 10
+      - value: 1
+        weight: 30
+      - value: 2
+        weight: 35
+      - value: 3
+        weight: 20
+      - value: 4
+        weight: 5
+```
+
+This makes distribution shaping easier than random ranges.
+
+---
+
+# CI/CD Additions
+
+* CI already runs lint/type/test.
+* Add a nightly (optional) workflow:
+
+  * run generator distribution sanity test with more samples (slower)
+* Add a `make regen-fixtures` (or script) to intentionally update regression snapshots when you change the model.
+
+---
+
+If you want the plan to be even more “agent-executable,” I can rewrite it into a strict checklist format with:
+
+* exact file names to edit/create per milestone
+* exact function signatures
+* exact test names and assertions (including tolerances for distribution tests)
+

@@ -6,17 +6,35 @@
     food: 100.0 # Produces 100 food units per production unit
   max_production_units_per_tick: 10.0 # Max 10 production units per tick (yielding 1000 food)
 
-- id: "mine_ore"
-  name: "Mine Ore"
+- id: "mine_minerals"
+  name: "Mine Minerals"
   inputs: {}
   outputs:
-    ore: 50.0 # Produces 50 ore units per production unit
-  max_production_units_per_tick: 10.0 # Max 10 production units per tick (yielding 500 ore)
+    minerals: 50.0 # Produces 50 minerals units per production unit
+  max_production_units_per_tick: 10.0 # Max 10 production units per tick (yielding 500 minerals)
 
-- id: "assemble_tools"
-  name: "Assemble Tools"
+- id: "refine_alloy"
+  name: "Refine Alloy"
   inputs:
-    ore: 10.0 # Requires 10 ore per production unit
+    minerals: 5.0
+    energy: 2.0
   outputs:
-    tools: 1.0 # Produces 1 tool unit per production unit
-  max_production_units_per_tick: 50.0 # Max 50 production units per tick (yielding 50 tools)
+    alloy: 1.0
+  max_production_units_per_tick: 20.0 # Max 20 alloy units
+
+- id: "refine_consumer_goods"
+  name: "Refine Consumer Goods"
+  inputs:
+    minerals: 3.0
+    energy: 1.0
+  outputs:
+    consumer_goods: 1.0
+  max_production_units_per_tick: 30.0 # Max 30 consumer goods units
+
+- id: "assemble_alloys"
+  name: "Assemble Alloys"
+  inputs:
+    minerals: 10.0 # Requires 10 minerals per production unit
+  outputs:
+    alloy: 1.0 # Produces 1 alloy unit per production unit
+  max_production_units_per_tick: 50.0 # Max 50 production units per tick (yielding 50 alloys)
