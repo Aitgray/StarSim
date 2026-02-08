@@ -6,7 +6,30 @@ system_templates:
     name: "Default Star System"
     min_planets: 2
     max_planets: 7
-    planet_type_weights: # Reference weights from planet_types.yaml or specific overrides
-      continental: 1.0
-      desert: 1.0
-      ocean: 1.0
+
+    # These are sampling weights for planet types. They bias toward inhospitable outcomes.
+    # "Habitable-ish" types (continental/ocean/arid) are kept low so many systems have none,
+    # and most systems that do have them will have 1, occasionally 2.
+    planet_type_weights:
+      # Habitable-ish (rare)
+      continental: 0.35
+      ocean: 0.30
+      arid: 0.25
+
+      # Marginal (uncommon)
+      desert: 0.55
+      ice: 0.50
+
+      # Harsh / dead (common)
+      barren: 1.10
+      barren_cold: 1.10
+      airless: 1.00
+      toxic: 0.85
+      ash: 0.75
+      molten: 0.65
+      volcanic: 0.60
+
+      # Giants (very common)
+      gas_giant: 1.35
+      ice_giant: 0.85
+      helium_giant: 0.20

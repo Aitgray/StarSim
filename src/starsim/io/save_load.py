@@ -36,6 +36,7 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
             "planets": [
                 {
                     "type": planet.type,
+                    "name": planet.name, # Add planet name
                     "habitability": planet.habitability,
                     "resource_potentials": {c_id: val for c_id, val in planet.resource_potentials.items()},
                     "tags": list(planet.tags),
@@ -105,8 +106,11 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
         {
             "id": faction.id,
             "name": faction.name,
+            "color": faction.color, # Added color serialization
             "traits": list(faction.traits),
             "weights": faction.weights,
+            "capital_world_id": faction.capital_world_id, # Added capital_world_id serialization
+            "resource_desire": faction.resource_desire, # Added resource_desire serialization
         }
         for faction in state.factions.values()
     ]
@@ -141,8 +145,11 @@ def from_dict(data: Dict[str, Any]) -> UniverseState:
             faction = Faction(
                 id=FactionId(f_data['id']),
                 name=f_data['name'],
+                color=f_data.get('color', '#CCCCCC'), # Deserialize color
                 traits=set(f_data.get('traits', [])),
                 weights=f_data.get('weights', {}),
+                capital_world_id=f_data.get('capital_world_id'), # Deserialize capital_world_id
+                resource_desire=f_data.get('resource_desire', 0.5), # Deserialize resource_desire
             )
             factions[faction.id] = faction
 
@@ -209,6 +216,7 @@ def from_dict(data: Dict[str, Any]) -> UniverseState:
             planets=[
                 Planet(
                     type=p_data['type'],
+                    name=p_data.get('name', ''), # Deserialize planet name
                     habitability=p_data['habitability'],
                     resource_potentials={CommodityId(c_id): val for c_id, val in p_data['resource_potentials'].items()},
                     tags=set(p_data['tags']),

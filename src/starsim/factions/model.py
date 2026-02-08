@@ -18,7 +18,7 @@ class Faction:
     # Weights for various decisions or influences (e.g., preference for certain commodity types)
     weights: Dict[str, float] = field(default_factory=dict)
     capital_world_id: Optional[WorldId] = None # New: The ID of this faction's capital system
-    desired_resources: Dict[CommodityId, float] = field(default_factory=dict) # New: Resource preferences/needs
+    resource_desire: float = 0.5 # New: Scalar representing a general desire for resources (e.g., 0.0 to 1.0)
 
 
 @dataclass

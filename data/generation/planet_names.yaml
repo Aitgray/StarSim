@@ -1,0 +1,200 @@
+planet_names:
+
+  continental:
+    - Aurelion
+    - New Horizon
+    - Valen Prime
+    - Eos
+    - Arcadia
+    - Meridian
+    - Helios Minor
+    - Verdantia
+    - Caelum
+    - Novaris
+    - Ithaca
+    - Solara
+    - Althaea
+    - Pelion
+    - Havenfall
+    - Orison
+    - Tiber
+    - Lyra Prime
+    - Paxos
+    - Elara
+
+  desert:
+    - Kharim
+    - Dunehold
+    - Sirocco
+    - Ashkar
+    - Sunreach
+    - Qarath
+    - Red Basin
+    - Vultara
+    - Scorch
+    - Kadesh
+    - Dryspire
+    - Aram
+    - Soltair
+    - Ember Plain
+    - Tannur
+
+  arid:
+    - Rustwind
+    - Pale Reach
+    - Arkon
+    - Dustmere
+    - Thalos
+    - Virex
+    - Cindral
+    - Ochre
+    - Halix
+    - Dryfall
+    - Kestron
+    - Barranca
+
+  ocean:
+    - Thalassa
+    - Pelagia
+    - Azure Deep
+    - Tidemarch
+    - Nereid
+    - Bluehaven
+    - Hydros
+    - Seaborn
+    - Lyris
+    - Coralline
+    - Aqualon
+    - Mare Prime
+    - Driftsea
+    - Delphos
+
+  ice:
+    - Borealis
+    - Cryost
+    - Frostmere
+    - Glacia
+    - White Reach
+    - Skath
+    - Permafrost
+    - Nix
+    - Icebound
+    - Helcar
+    - Snowfall
+    - Coldharbor
+
+  volcanic:
+    - Pyros
+    - Magmar
+    - Cinderfall
+    - Vulkris
+    - Ashen Core
+    - Brimstone
+    - Ignis
+    - Scoria
+    - Furnace
+    - Moltar
+
+  barren:
+    - Null
+    - Deadrock
+    - Greyfall
+    - Wastrel
+    - Drift
+    - Empty Reach
+    - Pale Stone
+    - Voidmark
+    - Karsis
+    - Shale
+
+  barren_cold:
+    - Frostrock
+    - Coldreach
+    - Bleakstone
+    - Wintermark
+    - Persei Null
+    - Icegrave
+    - White Void
+    - Glimmerless
+    - Static
+    - Cold Drift
+
+  molten:
+    - Hellspire
+    - Magmafall
+    - Infernis
+    - Pyre
+    - Coreburn
+    - Lavos
+    - Furnace Deep
+    - Red Mantle
+    - Sear
+    - Caldera
+
+  toxic:
+    - Venom
+    - Miasma
+    - Choke
+    - Greenfall
+    - Blight
+    - Corros
+    - Fume
+    - Acidreach
+    - Nox
+    - Toxis
+
+  ash:
+    - Cinder
+    - Blackfall
+    - Burnscar
+    - Grey Ash
+    - Fallout
+    - Char
+    - Scour
+    - Emberwake
+    - Dustgrave
+    - Aftermath
+
+  airless:
+    - Vacuum
+    - Stonehusk
+    - Silent Rock
+    - Airlock
+    - Craterfield
+    - Shell
+    - Luna Minor
+    - Hardpoint
+    - Iron Void
+    - Desolate
+
+  gas_giant:
+    - Jovar
+    - Hyperion
+    - Atlas
+    - Zephyrus
+    - Colossus
+    - Typhon
+    - Goliath
+    - Stratos
+    - Cyclone
+    - Vast
+
+  helium_giant:
+    - Helior
+    - Aurum
+    - Crown
+    - Highwind
+    - Zephyr Prime
+    - Radiant
+    - Halo
+    - Lumen
+
+  ice_giant:
+    - Boreas
+    - Neptune Minor
+    - Glacior
+    - Coldspire
+    - Blue Giant
+    - Skiron
+    - Frigidus
+    - Deep Cold

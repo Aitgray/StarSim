@@ -14,11 +14,12 @@ from flask import Flask, render_template, jsonify, request
 from src.starsim.core.state import UniverseState
 from src.starsim.core.ids import CommodityId, WorldId # Import WorldId for updating universe.worlds
 from src.starsim.generation.system_gen import generate_universe
-from src.starsim.generation.load import load_planet_types, load_system_templates
+from src.starsim.generation.load import load_planet_types, load_system_templates, load_planet_names, load_system_names
 from src.starsim.world.load import load_universe # Corrected import for load_universe
 from src.starsim.generation.bootstrap import apply_planet_potentials_to_world
 from src.starsim.generation.lane_gen import generate_non_intersecting_lanes # Import new lane generation
 from src.starsim.factions.model import Faction, WorldFactionState # Imported for WorldFactionState control
+from src.starsim.factions.ai import compute_world_value # Import compute_world_value
 
 
 app = Flask(__name__)
@@ -28,6 +29,8 @@ app = Flask(__name__)
 DATA_PATH = Path(__file__).parent.parent / "data"
 PLANET_TYPES = load_planet_types(DATA_PATH / "generation" / "planet_types.yaml")
 SYSTEM_TEMPLATES = load_system_templates(DATA_PATH / "generation" / "system_templates.yaml")
+PLANET_NAMES = load_planet_names(DATA_PATH / "generation" / "planet_names.yaml")
+SYSTEM_NAMES = load_system_names(DATA_PATH / "generation" / "system_names.yaml")
 
 # Global variables to store the universe state and cached data
 universe = None
@@ -68,14 +71,14 @@ def _initialize_universe_and_cache():
     test_seed = 100 # Use a fixed seed for consistent generation
     rng = random.Random(test_seed)
     
-    n_systems = 40 # Changed to 40 for testing purposes
+    n_systems = 180 # Changed to 40 for testing purposes
     # First, load the base universe data from YAML (this includes factions, if any)
     # This also sets a seed, which generate_universe will reuse
     base_universe_state = load_universe(DATA_PATH / "universe.yaml")
     
     # Then, generate additional systems/lanes on top of this base state
     # This is where generate_universe populates worlds and lanes if initial_state doesn't have enough
-    universe = generate_universe(rng, n_systems=n_systems, system_templates_data=SYSTEM_TEMPLATES, planet_types_data=PLANET_TYPES, initial_state=base_universe_state)
+    universe = generate_universe(rng, n_systems=n_systems, system_templates_data=SYSTEM_TEMPLATES, planet_types_data=PLANET_TYPES, planet_names_data=PLANET_NAMES, system_names_data=SYSTEM_NAMES, initial_state=base_universe_state)
     print(f"DEBUG: Universe generated. universe.factions: {universe.factions}")
 
     for world_id, world in universe.worlds.items():
@@ -176,7 +179,7 @@ def _initialize_universe_and_cache():
             "name": faction.name,
             "color": faction.color,
             "capital_world_id": str(faction.capital_world_id) if faction.capital_world_id else None,
-            "desired_resources": {str(cid): val for cid, val in faction.desired_resources.items()},
+            "resource_desire": faction.resource_desire,
         })
     print(f"DEBUG: cached_factions populated: {cached_factions}")
 
@@ -189,6 +192,7 @@ def _initialize_universe_and_cache():
             planet_resource_potentials = {str(cid): round(val, 2) for cid, val in planet.resource_potentials.items()}
             detailed_planets.append({
                 "type": planet.type,
+                "name": planet.name, # Include planet name
                 "habitability": round(planet.habitability, 2),
                 "resource_potentials": planet_resource_potentials
             })
@@ -218,6 +222,12 @@ def _initialize_universe_and_cache():
                     }
 
 
+        # Calculate faction evaluations for the current world
+        faction_evaluations = {}
+        for faction_id, faction in universe.factions.items():
+            value = compute_world_value(faction, world, universe)
+            faction_evaluations[str(faction_id)] = round(value, 2)
+
         cached_nodes.append({
             "id": str(world.id),
             "name": world.name,
@@ -229,6 +239,7 @@ def _initialize_universe_and_cache():
             "x": world.x,
             "y": world.y,
             "factions": world_factions_data,
+            "faction_evaluations": faction_evaluations, # Add faction evaluations
         })
     
     cached_edges = generate_non_intersecting_lanes(universe.worlds)

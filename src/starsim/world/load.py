@@ -58,19 +58,14 @@ def load_universe(path: Path) -> UniverseState:
         faction_id = FactionId(f_data['id'])
         capital_id = f_data.get('capital_world_id')
         
-        desired_res = {}
-        if 'desired_resources' in f_data:
-            for res_id, value in f_data['desired_resources'].items():
-                desired_res[CommodityId(res_id)] = value
-
         factions[faction_id] = Faction(
             id=faction_id,
             name=f_data['name'],
-            color=f_data.get('color', '#CCCCCC'), # Add this line to load color from YAML
+            color=f_data.get('color', '#CCCCCC'),
             traits=set(f_data.get('traits', [])),
             weights=f_data.get('weights', {}),
             capital_world_id=WorldId(capital_id) if capital_id else None,
-            desired_resources=desired_res,
+            resource_desire=f_data.get('resource_desire', 0.5), # Load resource_desire
         )
     print(f"DEBUG: Factions created: {factions}")
 

@@ -1,14 +1,14 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Any
+from typing import TYPE_CHECKING, Dict, List, Any, Optional, Tuple
 import random
 import math
 
-from ..core.ids import WorldId, CommodityId, LaneId # Added LaneId
+from ..core.ids import WorldId, CommodityId, LaneId
 from ..core.state import UniverseState
-from ..world.model import World, Lane # Added Lane
+from ..world.model import World, Lane
 from .model import Planet
-from .load import load_planet_types, load_system_templates, _process_weights_for_random_selection
-from .bootstrap import apply_planet_potentials_to_world # Import bootstrap function
+from .load import load_planet_types, load_system_templates, load_planet_names, load_system_names, _process_weights_for_random_selection
+from .bootstrap import apply_planet_potentials_to_world
 
 if TYPE_CHECKING:
     from ..core.state import UniverseState
@@ -88,9 +88,9 @@ def _get_closest_worlds_between_components(
     return closest_pair[0], closest_pair[1], min_distance
 
 
-def generate_planet(rng: random.Random, planet_type_data: Dict[str, Any]) -> Planet:
+def generate_planet(rng: random.Random, planet_type_data: Dict[str, Any], planet_names_data: Dict[str, List[str]]) -> Planet:
     """
-    Generates a single planet based on provided planet type data.
+    Generates a single planet based on provided planet type data and assigns a name.
     """
     # Sample habitability
     h_bands, h_weights = _process_weights_for_random_selection(planet_type_data["habitability_distribution"])
@@ -112,9 +112,6 @@ def generate_planet(rng: random.Random, planet_type_data: Dict[str, Any]) -> Pla
     
     if not selected_resource_table:
         # Default to a generic table if no thresholds met, or raise error
-        # For now, let's assume one table always covers the habitability range.
-        # This implies a default table or more complex logic for handling gaps/overlaps
-        # For simplicity, if no specific table is found (e.g., in a complex threshold setup), take the first one.
         selected_resource_table = list(planet_type_data["resource_tables"].values())[0]
 
     # Sample resource potentials
@@ -123,20 +120,26 @@ def generate_planet(rng: random.Random, planet_type_data: Dict[str, Any]) -> Pla
         potential_value = _sample_from_range_or_bins(rng, potential_data)
         resource_potentials[CommodityId(resource_id_str)] = potential_value
 
+    # Assign a name to the planet
+    planet_type_id = planet_type_data["id"]
+    name = rng.choice(planet_names_data.get(planet_type_id, [f"{planet_type_id.capitalize()} Planet"]))
+
+
     return Planet(
-        type=planet_type_data["id"],
+        type=planet_type_id,
+        name=name, # Assign the generated name
         habitability=habitability,
         resource_potentials=resource_potentials,
         tags=set() # Placeholder for planet-specific tags
     )
 
 
-def generate_world(world_id_str: str, rng: random.Random, system_template_data: Dict[str, Any], planet_types_data: Dict[str, Any]) -> World:
+def generate_world(world_id_str: str, rng: random.Random, system_template_data: Dict[str, Any], planet_types_data: Dict[str, Any], planet_names_data: Dict[str, List[str]], system_names_data: List[str]) -> World:
     """
-    Generates a World object for a given system, including its planets.
+    Generates a World object for a given system, including its planets and a name from a list.
     """
     world_id = WorldId(world_id_str)
-    world_name = f"World {world_id_str}" # Simple name for now
+    world_name = rng.choice(system_names_data) # Assign a random system name
 
     min_planets = system_template_data["min_planets"]
     max_planets = system_template_data["max_planets"]
@@ -147,7 +150,7 @@ def generate_world(world_id_str: str, rng: random.Random, system_template_data: 
 
     for _ in range(num_planets):
         selected_planet_type_data = rng.choices(planet_type_choices, weights=planet_type_weights, k=1)[0]
-        planet = generate_planet(rng, selected_planet_type_data)
+        planet = generate_planet(rng, selected_planet_type_data, planet_names_data) # Pass planet_names_data
         planets.append(planet)
     
     # Aggregate planet properties into world-level properties (rudimentary for now)
@@ -171,8 +174,7 @@ def generate_world(world_id_str: str, rng: random.Random, system_template_data: 
     )
     return world
 
-
-def generate_universe(rng: random.Random, n_systems: int, system_templates_data: Dict[str, Any], planet_types_data: Dict[str, Any], initial_state: Optional[UniverseState] = None) -> UniverseState:
+def generate_universe(rng: random.Random, n_systems: int, system_templates_data: Dict[str, Any], planet_types_data: Dict[str, Any], planet_names_data: Dict[str, List[str]], system_names_data: List[str], initial_state: Optional[UniverseState] = None) -> UniverseState:
     """
     Generates an entire UniverseState with N systems, potentially extending an initial state.
     """
@@ -184,7 +186,7 @@ def generate_universe(rng: random.Random, n_systems: int, system_templates_data:
     
     # Placeholder: currently generates N worlds, each representing a system with planets
     # For now, use the 'default_system' template
-    default_system_template = system_templates_data.get("default_system")
+    default_system_template = system_templates_data.get("default_system") # Use the passed argument
     if not default_system_template:
         raise ValueError("Default system template not found.")
 
@@ -194,7 +196,6 @@ def generate_universe(rng: random.Random, n_systems: int, system_templates_data:
             world.x = max(WORLD_COORD_RANGE_X[0], min(WORLD_COORD_RANGE_X[1], rng.gauss(WORLD_COORD_CENTER_X, WORLD_COORD_STD_DEV)))
             world.y = max(WORLD_COORD_RANGE_Y[0], min(WORLD_COORD_RANGE_Y[1], rng.gauss(WORLD_COORD_CENTER_Y, WORLD_COORD_STD_DEV)))
 
-
     # Only add systems if they don't already exist (in case initial_state already has some worlds)
     existing_world_ids = set(universe_state.worlds.keys())
     for i in range(n_systems):
@@ -202,7 +203,7 @@ def generate_universe(rng: random.Random, n_systems: int, system_templates_data:
         if WorldId(world_id_str) in existing_world_ids:
             continue # Skip if world already exists
 
-        world = generate_world(world_id_str, rng, default_system_template, planet_types_data)
+        world = generate_world(world_id_str, rng, default_system_template, planet_types_data, planet_names_data, system_names_data) # Use passed arguments
         apply_planet_potentials_to_world(world, universe_state) # Apply bootstrap logic
         universe_state.worlds[world.id] = world
     

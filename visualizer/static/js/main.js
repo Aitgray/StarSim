@@ -1,8 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    let universeFactionsData; // Declare globally within DOMContentLoaded scope
+
     fetch('/universe_data')
         .then(response => response.json())
         .then(data => {
-            renderUniverse(data.nodes, data.edges, data.factions); // Re-enabled passing factions data
+            universeFactionsData = data.factions; // Assign data.factions to global variable
+            renderUniverse(data.nodes, data.edges, universeFactionsData); // Pass global factions data
         })
         .catch(error => {
             console.error('Error fetching universe data:', error);
@@ -71,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         console.log("Faction colors map:", factionColors);
+        renderFactionKey(factionsData); // Call the new function here
         
         let width = svg.node().getBoundingClientRect().width;
         let height = svg.node().getBoundingClientRect().height;
@@ -150,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const hull = d3.polygonHull;
+            const line = d3.line().curve(d3.curveCatmullRom.alpha(0.5)); // Define a line generator with Catmull-Rom curve
             const clusterColors = d3.scaleOrdinal(d3.schemeCategory10);
 
             mainGroup.selectAll(".cluster-bubble").remove(); // Remove old bubbles before drawing new ones
@@ -160,7 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 .attr("class", "cluster-bubble")
                 .attr("d", d => {
                     const points = d.map(node => [node.x, node.y]);
-                    return hull(points) ? `M${hull(points).join("L")}Z` : null;
+                    // If hull returns points, use the line generator to draw a smoothed path
+                    // Also, add the closing 'Z' to ensure it's a closed path
+                    return hull(points) ? line(hull(points)) + "Z" : null;
                 })
                 .style("fill", (d, i) => clusterColors(i))
                 .style("fill-opacity", 0.1)
@@ -374,6 +381,22 @@ document.addEventListener('DOMContentLoaded', () => {
         modalSystemProsperity.text(d.prosperity);
         modalSystemPlanetsCount.text(d.num_planets);
 
+        // Populate faction evaluations
+        const modalFactionEvaluations = d3.select("#modal-faction-evaluations");
+        let factionEvaluationsHtml = '<ul>';
+        if (d.faction_evaluations && universeFactionsData) {
+            // Create a map for quick lookup of faction names by ID
+            const factionNameMap = new Map(universeFactionsData.map(f => [f.id, f.name]));
+            for (const [factionId, evaluation] of Object.entries(d.faction_evaluations)) {
+                const factionName = factionNameMap.get(factionId) || factionId; // Fallback to ID if name not found
+                factionEvaluationsHtml += `<li>${factionName}: ${evaluation.toFixed(2)}</li>`;
+            }
+        } else {
+            factionEvaluationsHtml += '<li>No faction evaluation data.</li>';
+        }
+        factionEvaluationsHtml += '</ul>';
+        modalFactionEvaluations.html(factionEvaluationsHtml);
+
         // Populate aggregated resources
         let aggResourcesHtml = '<ul>';
         if (d.aggregated_resources) {
@@ -391,14 +414,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (d.detailed_planets && d.detailed_planets.length > 0) {
             d.detailed_planets.forEach(planet => {
                 let planetResourcesHtml = '';
-                if (planet.resource_potentials) {
-                    planetResourcesHtml += ' (Resources: ';
-                    planetResourcesHtml += Object.entries(planet.resource_potentials)
+                if (planet.resource_potentials && Object.keys(planet.resource_potentials).length > 0) {
+                    planetResourcesHtml = Object.entries(planet.resource_potentials)
                         .map(([res, val]) => `${res.charAt(0).toUpperCase() + res.slice(1)}: ${val}`)
                         .join(', ');
-                    planetResourcesHtml += ')';
                 }
-                detailedPlanetsHtml += `<li>${planet.type.charAt(0).toUpperCase() + planet.type.slice(1)} Planet (Habitability: ${planet.habitability})${planetResourcesHtml}</li>`;
+                detailedPlanetsHtml += `<li>
+                                        <b>Planet name: ${planet.name}</b><br/>
+                                        Planet type: ${planet.type.charAt(0).toUpperCase() + planet.type.slice(1)}<br/>
+                                        Habitability: ${planet.habitability}<br/>
+                                        Resources: ${planetResourcesHtml || 'None'}
+                                    </li>`;
             });
         } else {
             detailedPlanetsHtml += '<li>No detailed planet information available.</li>';
@@ -438,8 +464,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("System Visualization center:", { centerX: centerX, centerY: centerY });
 
-        // Define a color scale for planet types
-        const planetTypeColorScale = d3.scaleOrdinal(d3.schemeCategory10); // Using D3's built-in color scheme
+        // Define a custom color map for planet types
+        const planetTypeColorMap = {
+            "continental": "#63b38c", // Blue-green blend
+            "ocean": "#4682b4",       // Steelblue
+            "arid": "#deb887",        // Sandybrown
+            "desert": "#c2b280",      // Light sandy color
+            "ice": "#b0e0e6",         // Powderblue
+            "barren": "#696969",      // Dimgray (black and gray blend)
+            "barren_cold": "#778899", // Light slategrey (black and pale blue blend)
+            "airless": "#a9a9a9",     // Darkgray (black and white blend)
+            "toxic": "#228b22",       // Forestgreen (green and black blend)
+            "ash": "#cd5c5c",         // Indianred (red and gray blend)
+            "molten": "#ff4500",      // Orangered (orange and red blend)
+            "volcanic": "#ff8c00",    // Darkorange (orange and black blend)
+            "gas_giant": "#d2b48c",   // Tan (orange and white blend)
+            "ice_giant": "#add8e6",   // Lightblue (pale blue and white blend)
+            "helium_giant": "#8a2be2" // Blueviolet (dark purple and white blend)
+        };
 
         // Draw the Star
         systemSvg.append("circle")
@@ -499,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .attr("cx", planetX) // Apply calculated X position
                     .attr("cy", planetY) // Apply calculated Y position
                     .attr("r", (8 + (planet.habitability * 5)) * 0.8) // Radius based on habitability, scaled down
-                    .style("fill", planetTypeColorScale(planet.type)) // Set color based on planet type
+                    .style("fill", planetTypeColorMap[planet.type] || "grey") // Set color based on planet type from custom map
                     .on("mouseover", (event) => showPlanetDetailTooltip(event, planet))
                     .on("mouseout", hideTooltip);
                 
@@ -511,18 +553,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dedicated tooltip for planets within the system visualization (optional, can reuse main tooltip)
     // For simplicity, let's reuse the main tooltip for now, but pass different data.
     function showPlanetDetailTooltip(event, planetData) {
-        let resourcesHtml = '';
+        let resourcesListHtml = '';
         if (planetData.resource_potentials) {
-            resourcesHtml += '<br/><b>Resources:</b><br/>';
-            for (const [resource, value] of Object.entries(planetData.resource_potentials)) {
-                resourcesHtml += `${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${value}<br/>`;
-            }
+            resourcesListHtml = Object.entries(planetData.resource_potentials)
+                .map(([resource, value]) => `${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${value}`)
+                .join(', ');
         }
-        tooltip.html(`<b>${planetData.type.charAt(0).toUpperCase() + planetData.type.slice(1)} Planet</b><br/>
+        tooltip.html(`<b>Planet name: ${planetData.name}</b><br/>
+                      Planet type: ${planetData.type.charAt(0).toUpperCase() + planetData.type.slice(1)}<br/>
                       Habitability: ${planetData.habitability}<br/>
-                      ${resourcesHtml}`)
+                      Resources: ${resourcesListHtml || 'None'}`)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 20) + "px")
             .classed("active", true);
+    }
+
+    function renderFactionKey(factionsData) {
+        const keyContainer = d3.select("#faction-key");
+        keyContainer.html(''); // Clear previous key
+
+        keyContainer.append("h3").text("Factions");
+
+        const factionItems = keyContainer.selectAll(".faction-item")
+            .data(factionsData)
+            .enter().append("div")
+            .attr("class", "faction-item");
+
+        factionItems.append("div")
+            .attr("class", "faction-color-box")
+            .style("background-color", d => d.color);
+
+        factionItems.append("span")
+            .attr("class", "faction-name")
+            .text(d => d.name);
     }
 }); // End of DOMContentLoaded event listener

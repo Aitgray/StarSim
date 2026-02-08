@@ -132,3 +132,19 @@ def load_habitability_tables(path: Path) -> Dict[str, Any]:
         data = yaml.safe_load(f)
     # No specific validation needed for this minimal file for now
     return data
+
+def load_planet_names(path: Path) -> Dict[str, List[str]]:
+    """Loads planet names from a YAML file."""
+    with open(path, 'r') as f:
+        data = yaml.safe_load(f)
+    if "planet_names" not in data:
+        raise GenerationSchemaError(f"Missing 'planet_names' key in {path}")
+    return data["planet_names"]
+
+def load_system_names(path: Path) -> List[str]:
+    """Loads system names from a YAML file."""
+    with open(path, 'r') as f:
+        data = yaml.safe_load(f)
+    if "system_names" not in data:
+        raise GenerationSchemaError(f"Missing 'system_names' key in {path}")
+    return data["system_names"]

@@ -17,6 +17,7 @@
     <div id="visualizer-container">
         <svg id="universe-svg"></svg>
     </div>
+    <div id="faction-key"></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
@@ -31,6 +32,9 @@
             
             <h3>Aggregated Resources</h3>
             <div id="modal-aggregated-resources"></div>
+
+            <h3 style="margin-top: 20px;">Faction Valuations</h3>
+            <div id="modal-faction-evaluations"></div>
 
             <h3 style="margin-top: 20px;">System Visualization</h3>
             <div id="system-visualization-container">

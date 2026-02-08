@@ -11,9 +11,7 @@ factions:
       economic_value: 1.0
       military_value: 0.5
     capital_world_id: null # Will be assigned dynamically
-    desired_resources:
-      food: 1.0
-      consumer_goods: 0.8
+    resource_desire: 0.5 # Default resource desire scalar
   - id: "xeno_coalition"
     name: "Xeno Coalition"
     color: "#DC3545" # Brighter Red
@@ -22,8 +20,6 @@ factions:
       economic_value: 0.8
       military_value: 1.2
     capital_world_id: null # Will be assigned dynamically
-    desired_resources:
-      minerals: 1.0
-      energy: 0.7
+    resource_desire: 0.5 # Default resource desire scalar
 
 lanes: [] # Removed specific lanes
