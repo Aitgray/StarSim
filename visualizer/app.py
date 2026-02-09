@@ -3,6 +3,7 @@ from pathlib import Path
 from collections import defaultdict, deque
 import random
 import json
+import threading # New: For thread-safe access to simulation state
 from typing import Dict, List, Set, Tuple, Optional
 
 # Add the project root to the Python path
@@ -13,6 +14,7 @@ from flask import Flask, render_template, jsonify, request
 
 from src.starsim.core.state import UniverseState
 from src.starsim.core.ids import CommodityId, WorldId # Import WorldId for updating universe.worlds
+import src.starsim.core.sim as sim # New: Import the sim module
 from src.starsim.generation.system_gen import generate_universe
 from src.starsim.generation.load import load_planet_types, load_system_templates, load_planet_names, load_system_names
 from src.starsim.world.load import load_universe # Corrected import for load_universe
@@ -68,7 +70,7 @@ def _get_shortest_path_hops(lane_graph: Dict[WorldId, List[WorldId]], start_node
 def _initialize_universe_and_cache():
     global universe, cached_nodes, cached_edges, cached_factions
     
-    test_seed = 100 # Use a fixed seed for consistent generation
+    test_seed = 40 # Use a fixed seed for consistent generation
     rng = random.Random(test_seed)
     
     n_systems = 180 # Changed to 40 for testing purposes
@@ -183,10 +185,25 @@ def _initialize_universe_and_cache():
         })
     print(f"DEBUG: cached_factions populated: {cached_factions}")
 
+    # Pre-process factions to get a set of all capital world IDs for quick lookup
+    capital_world_ids = {f.capital_world_id for f in universe.factions.values() if f.capital_world_id}
+
     cached_nodes = []
     for world_id, world in universe.worlds.items():
         world_resources = defaultdict(float)
         detailed_planets = []
+        
+        current_world_capital_planet_name = None # New variable to store the capital planet's name
+
+        # Determine the capital planet if this world is a capital world
+        if world_id in capital_world_ids:
+            habitable_planets = [p for p in world.planets if p.habitability > 0] # Define habitable as habitability > 0
+            if habitable_planets:
+                # Find the planet with the highest habitability
+                # For simplicity, if multiple have same max habitability, pick the first one
+                capital_planet = max(habitable_planets, key=lambda p: p.habitability)
+                current_world_capital_planet_name = capital_planet.name
+                print(f"DEBUG: World {world.name} ({world.id}) is a capital world. Capital planet is {capital_planet.name}")
 
         for planet in world.planets:
             planet_resource_potentials = {str(cid): round(val, 2) for cid, val in planet.resource_potentials.items()}
@@ -228,6 +245,8 @@ def _initialize_universe_and_cache():
             value = compute_world_value(faction, world, universe)
             faction_evaluations[str(faction_id)] = round(value, 2)
 
+        is_capital = world_id in capital_world_ids # Determine if this world is a capital
+        
         cached_nodes.append({
             "id": str(world.id),
             "name": world.name,
@@ -240,6 +259,8 @@ def _initialize_universe_and_cache():
             "y": world.y,
             "factions": world_factions_data,
             "faction_evaluations": faction_evaluations, # Add faction evaluations
+            "is_capital": is_capital, # Add the new field
+            "capital_planet_name": current_world_capital_planet_name, # Add the specific capital planet name
         })
     
     cached_edges = generate_non_intersecting_lanes(universe.worlds)

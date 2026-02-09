@@ -234,6 +234,45 @@ h1 {
     font-size: 1.1em;
 }
 
+/* Sector Key Styling */
+#sector-key {
+    background-color: #0f3460;
+    border: 1px solid #00bcd4;
+    padding: 10px;
+    margin: 20px auto; /* Same margin as faction-key */
+    width: 100%;
+    max-width: 1200px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+}
+
+#sector-key h3 {
+    color: #00bcd4;
+    margin-top: 0;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #00bcd4;
+    padding-bottom: 5px;
+}
+
+.sector-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.sector-color-box {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #e0e0e0;
+    margin-right: 10px;
+    border-radius: 4px;
+}
+
+.sector-name {
+    color: #e0e0e0;
+    font-size: 1.1em;
+}
+
 /* Styles for elements within the system visualization SVG */
 .star {
     fill: yellow; /* Make star solid yellow for debugging */
@@ -249,9 +288,39 @@ h1 {
 
 .planet-orbit {
     fill: none;
-    stroke: #444;
+    stroke: #AAA; /* Lightened color for better visibility */
     stroke-width: 0.5px;
     stroke-dasharray: 2 2;
+}
+
+/* Planet Key Styling (within modal) */
+#planet-key-modal {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px solid #333;
+    background-color: #222;
+    border-radius: 5px;
+    max-height: 200px; /* Limit height for scrollability */
+    overflow-y: auto; /* Enable scrolling if content overflows */
+}
+
+.planet-key-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.planet-key-color-box {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    border-radius: 3px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.planet-key-name {
+    color: #eee;
+    font-size: 0.9em;
 }
 
 

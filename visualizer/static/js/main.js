@@ -1,3 +1,24 @@
+// Define specific border colors for planet types
+const planetBorderColors = {
+    "continental": "#228B22",
+    "ocean": "#000080",
+    "arid": "#FF8C00",
+    "desert": "#C2B280",
+
+    "airless": "#FFFFFF",
+    "ash": "#A9A9A9",
+    "toxic": "#006400",
+    "molten": "#cf1020",
+    "barren": "#000000",
+    "barren cold": "#00008B",
+    "volcanic": "#FFA500",
+    "ice": "#00f7ff",
+
+    "ice giant": "#00f7ff",
+    "helium giant": "#800000",
+    "gas giant": "#FF8C00"
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     let universeFactionsData; // Declare globally within DOMContentLoaded scope
 
@@ -61,6 +82,28 @@ document.addEventListener('DOMContentLoaded', () => {
         tooltip.classed("active", false);
     }
 
+    // Helper function to lighten a hex color by a given percentage
+    function lightenColor(hex, percent) {
+        let f = parseInt(hex.slice(1), 16),
+            t = percent < 0 ? 0 : 255,
+            p = percent < 0 ? percent * -1 : percent,
+            c = (f & 0x00FF00) >> 8,
+            c1 = (f & 0x0000FF),
+            c2 = (f & 0xFF0000) >> 16;
+        return "#" + (
+            0x1000000 +
+            (Math.round((t - c2) * p) + c2) * 0x10000 +
+            (Math.round((t - c) * p) + c) * 0x100 +
+            (Math.round((t - c1) * p) + c1)
+        ).toString(16).slice(1);
+    }
+
+    // Function to determine border color based on habitability
+    function getHabitableBorderColor(planet) {
+        // Assuming habitability > 0.1 means habitable for border coloring purposes
+        return planet.habitability > 0.1 ? "green" : "grey";
+    }
+
     // Universe visualization function
     function renderUniverse(nodesData, edgesData, factionsData) { // Re-enabled factionsData
         console.log("renderUniverse called. nodesData:", nodesData, "edgesData:", edgesData, "factionsData:", factionsData); // Re-enabled factionsData from log
@@ -88,7 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Helper function to draw cluster bubbles (moved outside renderUniverse to be accessible by ticked)
         // This function will be called once the simulation stabilizes
         function drawClusterBubbles(nodes, mainGroup) {
-            if (nodes.length === 0) return;
+            let sectorKeyData = []; // Declare sectorKeyData here
+            if (nodes.length === 0) return sectorKeyData; // Return empty if no nodes
 
             const k = Math.max(1, Math.round(nodes.length * 0.05)); // 5% ratio for clusters
 
@@ -169,11 +213,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Also, add the closing 'Z' to ensure it's a closed path
                     return hull(points) ? line(hull(points)) + "Z" : null;
                 })
-                .style("fill", (d, i) => clusterColors(i))
+                .style("fill", (d, i) => {
+                    const color = clusterColors(i);
+                    const name = `Sector ${i + 1}`; // Simple naming
+                    sectorKeyData.push({ id: `sector-${i}`, name: name, color: color });
+                    return color;
+                })
                 .style("fill-opacity", 0.1)
                 .style("stroke", (d, i) => clusterColors(i))
                 .style("stroke-width", 2)
                 .style("stroke-linejoin", "round");
+            
+            // Return the data for the key
+            return sectorKeyData;
         }
         // --- End K-means Clustering and Visual Bubbles ---
 
@@ -305,7 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 simulation.stop(); // Stop the simulation once it's settled
                 console.log("Simulation stabilized. Sending node positions to backend for persistence.");
                 sendNodePositionsToBackend(node.data());
-                drawClusterBubbles(node.data(), g_main); // Call after stabilization
+                const sectorData = drawClusterBubbles(node.data(), g_main); // Capture the returned data
+                renderSectorKey(sectorData); // Call new function to render sector key
             }
         }
 
@@ -435,8 +488,10 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classed("active", true); // Show the modal
         hideTooltip(); // Hide tooltip if it's active
 
+        renderPlanetKey(planetBorderColors); // Call to render the planet key
+
         // Render system visualization AFTER the modal is active to ensure SVG has dimensions
-        renderSystemDetailVisualization(d); // Call the new visualization function
+        renderSystemDetailVisualization(d, d.is_capital); // Pass the is_capital flag
     } // Close the showSystemDetail function here
 
     closeButton.on("click", () => {
@@ -450,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function renderSystemDetailVisualization(systemData) {
+    function renderSystemDetailVisualization(systemData, isCapitalSystem = false) { // Add isCapitalSystem parameter
         const systemSvg = d3.select("#system-visualization-svg");
         systemSvg.selectAll("*").remove(); // Clear previous visualization
 
@@ -464,24 +519,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("System Visualization center:", { centerX: centerX, centerY: centerY });
 
-        // Define a custom color map for planet types
-        const planetTypeColorMap = {
-            "continental": "#63b38c", // Blue-green blend
-            "ocean": "#4682b4",       // Steelblue
-            "arid": "#deb887",        // Sandybrown
-            "desert": "#c2b280",      // Light sandy color
-            "ice": "#b0e0e6",         // Powderblue
-            "barren": "#696969",      // Dimgray (black and gray blend)
-            "barren_cold": "#778899", // Light slategrey (black and pale blue blend)
-            "airless": "#a9a9a9",     // Darkgray (black and white blend)
-            "toxic": "#228b22",       // Forestgreen (green and black blend)
-            "ash": "#cd5c5c",         // Indianred (red and gray blend)
-            "molten": "#ff4500",      // Orangered (orange and red blend)
-            "volcanic": "#ff8c00",    // Darkorange (orange and black blend)
-            "gas_giant": "#d2b48c",   // Tan (orange and white blend)
-            "ice_giant": "#add8e6",   // Lightblue (pale blue and white blend)
-            "helium_giant": "#8a2be2" // Blueviolet (dark purple and white blend)
-        };
+        // Define a color scale for planet types
+        // const planetTypeColorScale = d3.scaleOrdinal(d3.schemeCategory10); // Using D3's built-in color scheme
+
+
 
         // Draw the Star
         systemSvg.append("circle")
@@ -541,11 +582,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     .attr("cx", planetX) // Apply calculated X position
                     .attr("cy", planetY) // Apply calculated Y position
                     .attr("r", (8 + (planet.habitability * 5)) * 0.8) // Radius based on habitability, scaled down
-                    .style("fill", planetTypeColorMap[planet.type] || "grey") // Set color based on planet type from custom map
+                    .style("fill", d => planetBorderColors[planet.type] || "#808080") // Fill color based on planet type, fallback to grey
+                    .style("stroke", d => getHabitableBorderColor(planet)) // Border color based on habitability
+                    .style("stroke-width", 3)
+                    .attr("stroke-dasharray", (isCapitalSystem && planet.name === systemData.capital_planet_name) ? "5,5" : "none") // Dashed border only for the specific capital planet // Increase border width for visibility
                     .on("mouseover", (event) => showPlanetDetailTooltip(event, planet))
                     .on("mouseout", hideTooltip);
                 
-                console.log(`Planet ${i} final position:`, { cx: planetX, cy: planetY, r: (8 + (planet.habitability * 5)), orbitRadius: orbitRadius, angle: angle });
+                console.log(`Planet ${i} final position:`, { cx: planetX, cy: centerY, r: (8 + (planet.habitability * 5)), orbitRadius: orbitRadius, angle: angle });
             });
         }
     } // End of renderSystemDetailVisualization function
@@ -586,5 +630,49 @@ document.addEventListener('DOMContentLoaded', () => {
         factionItems.append("span")
             .attr("class", "faction-name")
             .text(d => d.name);
+    }
+
+    // Function to render the sector key
+    function renderSectorKey(sectorData) {
+        const keyContainer = d3.select("#sector-key"); // Assuming #sector-key container in HTML
+        keyContainer.html(''); // Clear previous key
+
+        keyContainer.append("h3").text("Sectors");
+
+        const sectorItems = keyContainer.selectAll(".sector-item")
+            .data(sectorData)
+            .enter().append("div")
+            .attr("class", "sector-item");
+
+        sectorItems.append("div")
+            .attr("class", "sector-color-box")
+            .style("background-color", d => d.color);
+
+        sectorItems.append("span")
+            .attr("class", "sector-name")
+            .text(d => d.name);
+    }
+
+    // Function to render the planet type key
+    function renderPlanetKey(planetBorderColorsMap) {
+        const keyContainer = d3.select("#planet-key-modal");
+        keyContainer.html(''); // Clear previous key
+
+        const planetTypes = Object.keys(planetBorderColorsMap).sort(); // Sort for consistent order
+
+        planetTypes.forEach(type => {
+            const color = planetBorderColorsMap[type];
+            const item = keyContainer.append("div")
+                .attr("class", "planet-key-item");
+
+            item.append("div")
+                .attr("class", "planet-key-color-box")
+                .style("background-color", color)
+                .style("border", `1px solid ${color}`); // Border of the same color
+
+            item.append("span")
+                .attr("class", "planet-key-name")
+                .text(type.charAt(0).toUpperCase() + type.slice(1)); // Capitalize first letter
+        });
     }
 }); // End of DOMContentLoaded event listener
