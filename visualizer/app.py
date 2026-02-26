@@ -55,6 +55,7 @@ class SimulationController:
         self._history = deque(maxlen=max_history)
         self._state = initial_state
         self._tick_count = 0
+        self._positions = {}
         self._history.append(to_dict(self._state))
 
     def get_state(self) -> UniverseState:
@@ -85,9 +86,13 @@ class SimulationController:
 
     def step_once(self):
         with self._lock:
-            sim.step(self._state)
-            self._tick_count += 1
-            self._history.append(to_dict(self._state))
+            try:
+                sim.step(self._state)
+                self._tick_count += 1
+                self._history.append(to_dict(self._state))
+            except Exception as exc:
+                self._running = False
+                print(f"ERROR: sim.step failed in step_once: {exc}")
 
     def rewind(self, steps: int = 1):
         with self._lock:
@@ -99,6 +104,23 @@ class SimulationController:
                     self._tick_count = max(0, self._tick_count - 1)
             snapshot = self._history[-1]
             self._state = from_dict(snapshot)
+            if self._positions:
+                for world_id, pos in self._positions.items():
+                    if world_id in self._state.worlds:
+                        world = self._state.worlds[world_id]
+                        world.x = pos["x"]
+                        world.y = pos["y"]
+
+    def update_positions(self, node_positions: Dict[WorldId, Dict[str, float]]):
+        with self._lock:
+            for world_id, pos in node_positions.items():
+                if world_id in self._state.worlds:
+                    world = self._state.worlds[world_id]
+                    world.x = pos["x"]
+                    world.y = pos["y"]
+                    self._positions[world_id] = {"x": pos["x"], "y": pos["y"]}
+            if self._history:
+                self._history[-1] = to_dict(self._state)
 
     def stop(self):
         self._stop_event.set()
@@ -107,9 +129,13 @@ class SimulationController:
         while not self._stop_event.is_set():
             with self._lock:
                 if self._running:
-                    sim.step(self._state)
-                    self._tick_count += 1
-                    self._history.append(to_dict(self._state))
+                    try:
+                        sim.step(self._state)
+                        self._tick_count += 1
+                        self._history.append(to_dict(self._state))
+                    except Exception as exc:
+                        self._running = False
+                        print(f"ERROR: sim.step failed in run loop: {exc}")
             time.sleep(self._tick_interval_s)
 
 # --- Helper for shortest path in hops (BFS) ---
@@ -371,11 +397,11 @@ def update_node_positions():
     # Update the global universe object's world coordinates
     with sim_controller.lock():
         universe = sim_controller.get_state()
+        parsed_positions = {}
         for world_id_str, pos in node_positions.items():
             world_id = WorldId(world_id_str)
-            if world_id in universe.worlds:
-                universe.worlds[world_id].x = pos['x']
-                universe.worlds[world_id].y = pos['y']
+            parsed_positions[world_id] = {"x": pos["x"], "y": pos["y"]}
+        sim_controller.update_positions(parsed_positions)
     
     # Update the cached_nodes as well for consistency
     for node_data in cached_nodes:
