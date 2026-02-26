@@ -24,6 +24,7 @@ from src.starsim.generation.lane_gen import generate_non_intersecting_lanes # Im
 from src.starsim.factions.model import Faction, WorldFactionState # Imported for WorldFactionState control
 from src.starsim.factions.ai import compute_world_value # Import compute_world_value
 from src.starsim.io.save_load import to_dict, from_dict
+from src.starsim.economy.recipes import recipe_registry
 
 
 app = Flask(__name__)
@@ -252,6 +253,9 @@ def _rebuild_cache_from_state(state: UniverseState):
 
 def _initialize_universe_and_cache():
     global universe, cached_nodes, cached_edges, cached_factions, sim_controller
+
+    if not recipe_registry.all_recipes():
+        recipe_registry.load_from_yaml(DATA_PATH / "recipes.yaml")
     
     test_seed = 40 # Use a fixed seed for consistent generation
     rng = random.Random(test_seed)
