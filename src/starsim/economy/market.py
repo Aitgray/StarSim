@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+import logging
 from typing import Dict, Any, TYPE_CHECKING
 
 from ..core.ids import WorldId, CommodityId
@@ -9,6 +10,7 @@ if TYPE_CHECKING:
     from ..core.state import UniverseState
     from ..world.model import World
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Market:
@@ -44,31 +46,19 @@ def update_prices(world: "World", state: "UniverseState"):
         current_qty = market.inventory.get(commodity_id)
         current_price = market.prices.get(commodity_id, state.commodity_registry.get(commodity_id).base_price)
 
-        print(f"DEBUG: {world.id} - Commodity: {commodity_id}")
-        print(f"DEBUG:   Current Qty: {current_qty}, Target Qty: {target_qty}")
-        print(f"DEBUG:   Current Price: {current_price}")
-
         # Simple heuristic: if inventory < target, price increases; if > target, price decreases
         # The larger the difference, the larger the change
         if target_qty > 0: # Avoid division by zero
             ratio = current_qty / target_qty
         else: # If target is zero, any inventory is surplus
             ratio = 10.0 # Arbitrarily high to reduce price
-        print(f"DEBUG:   Ratio (current_qty / target_qty): {ratio}")
-
         # Adjust price based on ratio
         # If ratio < 1, price increases. If ratio > 1, price decreases.
         # price_change_factor determines the speed of adjustment
         price_adjustment = (1.0 - ratio) * market.price_change_factor
         new_price = current_price * (1.0 + price_adjustment)
-        print(f"DEBUG:   Price Adjustment: {price_adjustment}")
-        print(f"DEBUG:   New Price (before clamp): {new_price}")
-
         # Clamp price within bounds
         base_price = state.commodity_registry.get(commodity_id).base_price
         min_bound = base_price * market.min_price_multiplier
         max_bound = base_price * market.max_price_multiplier
-        print(f"DEBUG:   Base Price: {base_price}, Min Bound: {min_bound}, Max Bound: {max_bound}")
-        
         market.prices[commodity_id] = max(min_bound, min(max_bound, new_price))
-        print(f"DEBUG:   Final Price: {market.prices[commodity_id]}")

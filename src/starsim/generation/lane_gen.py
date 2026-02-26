@@ -1,4 +1,5 @@
 import math
+import logging
 import numpy as np
 from scipy.spatial import Delaunay
 from typing import Dict, List, Tuple
@@ -6,6 +7,8 @@ from collections import defaultdict
 
 from ..core.ids import WorldId, LaneId
 from ..world.model import World, Lane
+
+logger = logging.getLogger(__name__)
 
 def euclidean_distance(p1: Tuple[float, float], p2: Tuple[float, float]) -> float:
     """Calculates the Euclidean distance between two 2D points."""
@@ -61,7 +64,7 @@ def generate_non_intersecting_lanes(worlds: Dict[WorldId, World]) -> List[Dict]:
     try:
         tri = Delaunay(coords)
     except Exception as e:
-        print(f"ERROR: Delaunay triangulation failed: {e}")
+        logger.error("Delaunay triangulation failed: %s", e)
         return []
 
     # 3. Collect all unique edges from the Delaunay triangulation with their Euclidean distances

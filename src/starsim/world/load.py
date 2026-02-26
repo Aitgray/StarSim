@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 from typing import Dict, Any, Optional
 import yaml
 
@@ -11,32 +12,27 @@ from ..economy.consumption import Population
 from ..economy.production import Industry # Import Industry
 from ..factions.model import Faction, WorldFactionState # Added Faction, WorldFactionState
 
+logger = logging.getLogger(__name__)
+
 class UniverseSchemaError(Exception):
     """Raised when there is a problem with the universe data schema."""
     pass
 
 
 def load_universe(path: Path) -> UniverseState:
-    print(f"DEBUG: Loading universe from path: {path}")
     with open(path, 'r') as f:
         data = yaml.safe_load(f)
-    print(f"DEBUG: YAML data loaded: {data}")
 
     if data is None:
-        print("DEBUG: YAML data is None, returning early.")
         return None # Explicitly return None if data is empty
 
     seed = data.get('seed')
     if seed is None:
         raise UniverseSchemaError("Missing 'seed' in universe data.")
-    print(f"DEBUG: Seed: {seed}")
 
     worlds_data = data.get('worlds', [])
     lanes_data = data.get('lanes', [])
     factions_data = data.get('factions', []) # Get factions data
-    print(f"DEBUG: Worlds data: {worlds_data}")
-    print(f"DEBUG: Lanes data: {lanes_data}")
-    print(f"DEBUG: Factions data: {factions_data}") # Debugging factions data
 
     # Schema check: duplicate IDs
     world_ids = [w['id'] for w in worlds_data]
@@ -54,7 +50,6 @@ def load_universe(path: Path) -> UniverseState:
     # --- Load Factions ---
     factions = {}
     for f_data in factions_data:
-        print(f"DEBUG: Faction f_data before construction: {f_data}") # Debugging print
         faction_id = FactionId(f_data['id'])
         capital_id = f_data.get('capital_world_id')
         
@@ -67,7 +62,6 @@ def load_universe(path: Path) -> UniverseState:
             capital_world_id=WorldId(capital_id) if capital_id else None,
             resource_desire=f_data.get('resource_desire', 0.5), # Load resource_desire
         )
-    print(f"DEBUG: Factions created: {factions}")
 
     worlds = {}
     for w_data in worlds_data:
@@ -171,10 +165,8 @@ def load_universe(path: Path) -> UniverseState:
         # Schema check: unknown world referenced by a lane
         a_id, b_id = WorldId(l_data['a']), WorldId(l_data['b'])
         if a_id not in worlds:
-            print(f"DEBUG: UniverseSchemaError - Lane '{l_data['id']}' references unknown world '{l_data['a']}'.")
             raise UniverseSchemaError(f"Lane '{l_data['id']}' references unknown world '{l_data['a']}'.")
         if b_id not in worlds:
-            print(f"DEBUG: UniverseSchemaError - Lane '{l_data['id']}' references unknown world '{l_data['b']}'.")
             raise UniverseSchemaError(f"Lane '{l_data['id']}' references unknown world '{l_data['b']}'.")
 
         lanes[LaneId(l_data['id'])] = Lane(
@@ -186,8 +178,6 @@ def load_universe(path: Path) -> UniverseState:
             capacity=l_data.get('capacity', 1.0),
         )
 
-    print(f"DEBUG: Worlds created: {worlds}")
-    print(f"DEBUG: Lanes created: {lanes}")
     state = UniverseState(
         seed=seed,
         tick=data.get('tick', 0), # Use 0 as default if not in data
@@ -195,5 +185,4 @@ def load_universe(path: Path) -> UniverseState:
         lanes=lanes,
         factions=factions, # Pass loaded factions to UniverseState
     )
-    print("DEBUG: UniverseState successfully created.")
     return state

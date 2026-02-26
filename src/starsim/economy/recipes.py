@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
+import logging
 from pathlib import Path
 from typing import Dict, List, Any
 import yaml
 
 from ..core.ids import CommodityId, RecipeId
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Recipe:
@@ -20,11 +22,8 @@ class RecipeRegistry:
         self._recipes: Dict[RecipeId, Recipe] = {}
 
     def load_from_yaml(self, path: Path):
-        print(f"Loading recipes from: {path}") # Debug print
         with open(path, 'r') as f:
             data = yaml.safe_load(f)
-        
-        print(f"Data loaded from YAML: {data}") # Debug print
 
         if data is None:
             raise ValueError(f"YAML file '{path}' is empty or malformed.")

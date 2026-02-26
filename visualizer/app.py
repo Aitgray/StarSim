@@ -1,4 +1,5 @@
 import sys
+import logging
 from pathlib import Path
 from collections import defaultdict, deque
 import random
@@ -29,6 +30,7 @@ from src.starsim.economy.commodities import commodity_registry
 
 
 app = Flask(__name__)
+logger = logging.getLogger(__name__)
 
 # Load generation data once on startup
 # Assuming data files are relative to the project root
@@ -94,7 +96,7 @@ class SimulationController:
                 self._history.append(to_dict(self._state))
             except Exception as exc:
                 self._running = False
-                print(f"ERROR: sim.step failed in step_once: {exc}")
+                logger.error("sim.step failed in step_once: %s", exc)
 
     def rewind(self, steps: int = 1):
         with self._lock:
@@ -137,7 +139,7 @@ class SimulationController:
                         self._history.append(to_dict(self._state))
                     except Exception as exc:
                         self._running = False
-                        print(f"ERROR: sim.step failed in run loop: {exc}")
+                        logger.error("sim.step failed in run loop: %s", exc)
             time.sleep(self._tick_interval_s)
 
 # --- Helper for shortest path in hops (BFS) ---
@@ -271,7 +273,7 @@ def _initialize_universe_and_cache():
     # Then, generate additional systems/lanes on top of this base state
     # This is where generate_universe populates worlds and lanes if initial_state doesn't have enough
     universe = generate_universe(rng, n_systems=n_systems, system_templates_data=SYSTEM_TEMPLATES, planet_types_data=PLANET_TYPES, planet_names_data=PLANET_NAMES, system_names_data=SYSTEM_NAMES, initial_state=base_universe_state)
-    print(f"DEBUG: Universe generated. universe.factions: {universe.factions}")
+    logger.debug("Universe generated. universe.factions: %s", universe.factions)
 
     for world_id, world in universe.worlds.items():
         apply_planet_potentials_to_world(world, universe)
@@ -298,7 +300,7 @@ def _initialize_universe_and_cache():
         # If capital_world_id is already defined in YAML, use that
         if faction.capital_world_id is not None:
             assigned_capital_worlds_ids.add(faction.capital_world_id)
-            print(f"DEBUG: Faction {faction_id} capital loaded from YAML: {faction.capital_world_id}")
+            logger.debug("Faction %s capital loaded from YAML: %s", faction_id, faction.capital_world_id)
             continue 
 
         # Identify systems controlled by other factions (including already assigned capitals)
@@ -346,7 +348,7 @@ def _initialize_universe_and_cache():
             chosen_capital_id = suitable_capital_candidates[0] # Pick the first suitable from shuffled list
             universe.factions[faction_id].capital_world_id = chosen_capital_id
             assigned_capital_worlds_ids.add(chosen_capital_id)
-            print(f"DEBUG: Assigned capital {chosen_capital_id} to faction {faction_id}")
+            logger.debug("Assigned capital %s to faction %s", chosen_capital_id, faction_id)
             
             # Set this faction to control the capital world
             if chosen_capital_id in universe.worlds:
@@ -360,7 +362,10 @@ def _initialize_universe_and_cache():
                 world.factions.influence[faction_id] = 1.0 # Max influence
                 world.factions.resolve_control() # Resolve control
         else:
-            print(f"WARNING: Could not find suitable capital for faction {faction_id}. No habitable worlds far enough from others.")
+            logger.warning(
+                "Could not find suitable capital for faction %s. No habitable worlds far enough from others.",
+                faction_id,
+            )
 
     # --- End Capital Assignment Logic ---
 

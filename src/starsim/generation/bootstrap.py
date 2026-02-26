@@ -5,6 +5,8 @@ from math import floor
 from ..core.ids import CommodityId, RecipeId # Import RecipeId
 from ..economy.consumption import Population
 from ..economy.production import Industry
+from ..economy.market import Market
+from ..factions.model import WorldFactionState
 
 if TYPE_CHECKING:
     from ..world.model import World
@@ -27,6 +29,10 @@ def apply_planet_potentials_to_world(world: "World", universe_state: "UniverseSt
         world.population = Population()
     if world.industry is None:
         world.industry = Industry()
+    if world.market is None:
+        world.market = Market()
+    if world.factions is None:
+        world.factions = WorldFactionState()
 
     # Apply habitability impacts as per Milestone 22 rules
     if world.planets:
