@@ -20,17 +20,74 @@ const planetBorderColors = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    let universeFactionsData; // Declare globally within DOMContentLoaded scope
+    let universeFactionsData;
+    let universeNodesData;
+    let universeEdgesData;
+    let universeRender;
+    let simPollHandle = null;
 
-    fetch('/universe_data')
-        .then(response => response.json())
-        .then(data => {
-            universeFactionsData = data.factions; // Assign data.factions to global variable
-            renderUniverse(data.nodes, data.edges, universeFactionsData); // Pass global factions data
-        })
-        .catch(error => {
-            console.error('Error fetching universe data:', error);
+    function postJson(url, payload) {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload || {}),
+        }).then(response => response.json());
+    }
+
+    function updateTick(meta) {
+        const tickEl = document.getElementById("sim-tick");
+        if (!tickEl) return;
+        const tickVal = meta && typeof meta.tick === "number" ? meta.tick : 0;
+        tickEl.textContent = `Tick: ${tickVal}`;
+    }
+
+    function applySimState(data) {
+        if (!data) return;
+        updateTick(data.meta);
+
+        if (!universeRender) {
+            universeFactionsData = data.factions;
+            universeNodesData = data.nodes;
+            universeEdgesData = data.edges;
+            universeRender = renderUniverse(universeNodesData, universeEdgesData, universeFactionsData);
+            return;
+        }
+
+        if (!universeNodesData || data.nodes.length !== universeNodesData.length) {
+            console.warn("Universe node count changed; reload required to re-render.");
+            return;
+        }
+
+        const incomingById = new Map(data.nodes.map(n => [n.id, n]));
+        universeNodesData.forEach(node => {
+            const updated = incomingById.get(node.id);
+            if (updated) {
+                Object.assign(node, updated);
+            }
         });
+
+        if (universeRender && universeRender.refresh) {
+            universeRender.refresh();
+        }
+    }
+
+    function fetchSimState() {
+        return fetch('/sim/state')
+            .then(response => response.json())
+            .then(data => {
+                applySimState(data);
+                return data;
+            })
+            .catch(error => {
+                console.error('Error fetching sim state:', error);
+            });
+    }
+
+    fetchSimState().then(() => {
+        if (!simPollHandle) {
+            simPollHandle = setInterval(fetchSimState, 1000);
+        }
+    });
 
     // Tooltip functionality (global, as it's used by universe and system detail)
     const tooltip = d3.select("body").append("div")
@@ -250,34 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         console.log("D3 Simulation created.");
 
-        // Universe animation state controls
-        let universeAnimationState = 'playing'; // 'paused', 'playing'
         // Initial state: start playing
         simulation.alpha(1).restart(); // Start simulation at high alpha to spread nodes
-
-        // Attach event listeners for global controls
-        d3.select("#play-button").on("click", () => {
-            if (universeAnimationState !== 'playing') {
-                universeAnimationState = 'playing';
-                simulation.alphaTarget(0.3).restart(); // Resume simulation
-                console.log("Universe Simulation: Playing");
-            }
-        });
-
-        d3.select("#pause-button").on("click", () => {
-            if (universeAnimationState !== 'paused') {
-                universeAnimationState = 'paused';
-                simulation.stop(); // Pause simulation
-                console.log("Universe Simulation: Paused");
-            }
-        });
-
-        d3.select("#reverse-button").on("click", () => {
-            // For a force simulation, "reverse" usually means reset or restart
-            universeAnimationState = 'playing'; // Resume playing after reset
-            simulation.alpha(1).restart(); // Reset and restart simulation with a fresh alpha
-            console.log("Universe Simulation: Reset and Playing");
-        });
 
         const link = g_main.append("g")
             .attr("class", "links")
@@ -291,6 +322,25 @@ document.addEventListener('DOMContentLoaded', () => {
             .on("mouseout", hideTooltip);
         console.log("Links appended. Number of Nodes:", link.size()); // Typo fix - from 'log' to 'Logs'
 
+        function getNodeColor(d) {
+            let controlledByFactionId = null;
+
+            if (d.factions && Object.keys(d.factions).length > 0) {
+                for (const factionId in d.factions) {
+                    const factionState = d.factions[factionId];
+                    if (factionState.controlled_by) {
+                        controlledByFactionId = factionId;
+                        break;
+                    }
+                }
+            }
+
+            if (controlledByFactionId && factionColors.has(controlledByFactionId)) {
+                return factionColors.get(controlledByFactionId);
+            }
+            return "grey";
+        }
+
         const node = g_main.append("g")
             .attr("class", "nodes")
             .selectAll("circle")
@@ -298,24 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .enter().append("circle")
             .attr("class", "node")
             .attr("r", 15)
-            .style("fill", d => { // Re-enabled faction-based color
-                let controlledByFactionId = null;
-
-                if (d.factions && Object.keys(d.factions).length > 0) {
-                    for (const factionId in d.factions) {
-                        const factionState = d.factions[factionId];
-                        if (factionState.controlled_by) { // Check if this faction explicitly controls the world
-                            controlledByFactionId = factionId;
-                            break; // Found the controller, no need to check other factions
-                        }
-                    }
-                }
-                
-                if (controlledByFactionId && factionColors.has(controlledByFactionId)) {
-                    return factionColors.get(controlledByFactionId);
-                }
-                return "grey"; // Neutral color if no faction controls it
-            })
+            .style("fill", d => getNodeColor(d))
             .style("stroke", "white")
             .style("stroke-width", 2)
             // .call(d3.drag() // Comment out to disable dragging
@@ -410,6 +443,29 @@ document.addEventListener('DOMContentLoaded', () => {
             simulation.force("center", d3.forceCenter(width / 2, height / 2));
             simulation.alpha(0.3).restart(); // Restart simulation gently
         });
+
+        function refresh() {
+            node.style("fill", d => getNodeColor(d));
+        }
+
+        // Attach event listeners for sim controls (once)
+        d3.select("#play-button").on("click", () => {
+            postJson('/sim/play');
+        });
+
+        d3.select("#pause-button").on("click", () => {
+            postJson('/sim/pause');
+        });
+
+        d3.select("#step-button").on("click", () => {
+            postJson('/sim/step', { steps: 1 }).then(fetchSimState);
+        });
+
+        d3.select("#rewind-button").on("click", () => {
+            postJson('/sim/rewind', { steps: 1 }).then(fetchSimState);
+        });
+
+        return { refresh };
     } // End of renderUniverse function
 
 

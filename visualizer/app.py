@@ -54,11 +54,23 @@ class SimulationController:
         self._max_history = max_history
         self._history = deque(maxlen=max_history)
         self._state = initial_state
+        self._tick_count = 0
         self._history.append(to_dict(self._state))
 
     def get_state(self) -> UniverseState:
         with self._lock:
             return self._state
+
+    def lock(self):
+        return self._lock
+
+    def is_running(self) -> bool:
+        with self._lock:
+            return self._running
+
+    def tick_count(self) -> int:
+        with self._lock:
+            return self._tick_count
 
     def play(self):
         with self._lock:
@@ -74,13 +86,17 @@ class SimulationController:
     def step_once(self):
         with self._lock:
             sim.step(self._state)
+            self._tick_count += 1
             self._history.append(to_dict(self._state))
 
     def rewind(self, steps: int = 1):
         with self._lock:
+            if steps <= 0:
+                return
             for _ in range(steps):
                 if len(self._history) > 1:
                     self._history.pop()
+                    self._tick_count = max(0, self._tick_count - 1)
             snapshot = self._history[-1]
             self._state = from_dict(snapshot)
 
@@ -92,6 +108,7 @@ class SimulationController:
             with self._lock:
                 if self._running:
                     sim.step(self._state)
+                    self._tick_count += 1
                     self._history.append(to_dict(self._state))
             time.sleep(self._tick_interval_s)
 
@@ -122,8 +139,93 @@ def _get_shortest_path_hops(lane_graph: Dict[WorldId, List[WorldId]], start_node
     return None # No path found to any target within min_hops
 
 
+def _rebuild_cache_from_state(state: UniverseState):
+    global cached_nodes, cached_edges, cached_factions
+
+    cached_factions = []
+    for faction_id, faction in state.factions.items():
+        cached_factions.append({
+            "id": str(faction.id),
+            "name": faction.name,
+            "color": faction.color,
+            "capital_world_id": str(faction.capital_world_id) if faction.capital_world_id else None,
+            "resource_desire": faction.resource_desire,
+        })
+
+    capital_world_ids = {f.capital_world_id for f in state.factions.values() if f.capital_world_id}
+
+    cached_nodes = []
+    for world_id, world in state.worlds.items():
+        world_resources = defaultdict(float)
+        detailed_planets = []
+
+        current_world_capital_planet_name = None
+        if world_id in capital_world_ids:
+            habitable_planets = [p for p in world.planets if p.habitability > 0]
+            if habitable_planets:
+                capital_planet = max(habitable_planets, key=lambda p: p.habitability)
+                current_world_capital_planet_name = capital_planet.name
+
+        for planet in world.planets:
+            planet_resource_potentials = {str(cid): round(val, 2) for cid, val in planet.resource_potentials.items()}
+            detailed_planets.append({
+                "type": planet.type,
+                "name": planet.name,
+                "habitability": round(planet.habitability, 2),
+                "resource_potentials": planet_resource_potentials
+            })
+            for commodity_id, potential_value in planet.resource_potentials.items():
+                world_resources[str(commodity_id)] += round(potential_value, 2)
+
+        world_factions_data = {}
+        if world.factions:
+            wfs = world.factions
+
+            controlled_by_faction_id = None
+            if wfs.control:
+                controlled_by_faction_id = wfs.control
+                world_factions_data[str(controlled_by_faction_id)] = {
+                    "influence": wfs.influence.get(controlled_by_faction_id, 0.0),
+                    "presence": True,
+                    "controlled_by": True
+                }
+
+            for fac_id, influence_val in wfs.influence.items():
+                if fac_id != controlled_by_faction_id:
+                    world_factions_data[str(fac_id)] = {
+                        "influence": influence_val,
+                        "presence": True,
+                        "controlled_by": False
+                    }
+
+        faction_evaluations = {}
+        for faction_id, faction in state.factions.items():
+            value = compute_world_value(faction, world, state)
+            faction_evaluations[str(faction_id)] = round(value, 2)
+
+        is_capital = world_id in capital_world_ids
+
+        cached_nodes.append({
+            "id": str(world.id),
+            "name": world.name,
+            "stability": round(world.stability, 2),
+            "prosperity": round(world.prosperity, 2),
+            "num_planets": len(world.planets),
+            "aggregated_resources": dict(world_resources),
+            "detailed_planets": detailed_planets,
+            "x": world.x,
+            "y": world.y,
+            "factions": world_factions_data,
+            "faction_evaluations": faction_evaluations,
+            "is_capital": is_capital,
+            "capital_planet_name": current_world_capital_planet_name,
+        })
+
+    cached_edges = generate_non_intersecting_lanes(state.worlds)
+
+
 def _initialize_universe_and_cache():
-    global universe, cached_nodes, cached_edges, cached_factions
+    global universe, cached_nodes, cached_edges, cached_factions, sim_controller
     
     test_seed = 40 # Use a fixed seed for consistent generation
     rng = random.Random(test_seed)
@@ -229,100 +331,20 @@ def _initialize_universe_and_cache():
 
     # --- End Capital Assignment Logic ---
 
-    cached_factions = []
-    for faction_id, faction in universe.factions.items():
-        cached_factions.append({
-            "id": str(faction.id),
-            "name": faction.name,
-            "color": faction.color,
-            "capital_world_id": str(faction.capital_world_id) if faction.capital_world_id else None,
-            "resource_desire": faction.resource_desire,
-        })
-    print(f"DEBUG: cached_factions populated: {cached_factions}")
-
-    # Pre-process factions to get a set of all capital world IDs for quick lookup
-    capital_world_ids = {f.capital_world_id for f in universe.factions.values() if f.capital_world_id}
-
-    cached_nodes = []
-    for world_id, world in universe.worlds.items():
-        world_resources = defaultdict(float)
-        detailed_planets = []
-        
-        current_world_capital_planet_name = None # New variable to store the capital planet's name
-
-        # Determine the capital planet if this world is a capital world
-        if world_id in capital_world_ids:
-            habitable_planets = [p for p in world.planets if p.habitability > 0] # Define habitable as habitability > 0
-            if habitable_planets:
-                # Find the planet with the highest habitability
-                # For simplicity, if multiple have same max habitability, pick the first one
-                capital_planet = max(habitable_planets, key=lambda p: p.habitability)
-                current_world_capital_planet_name = capital_planet.name
-                print(f"DEBUG: World {world.name} ({world.id}) is a capital world. Capital planet is {capital_planet.name}")
-
-        for planet in world.planets:
-            planet_resource_potentials = {str(cid): round(val, 2) for cid, val in planet.resource_potentials.items()}
-            detailed_planets.append({
-                "type": planet.type,
-                "name": planet.name, # Include planet name
-                "habitability": round(planet.habitability, 2),
-                "resource_potentials": planet_resource_potentials
-            })
-            for commodity_id, potential_value in planet.resource_potentials.items():
-                world_resources[str(commodity_id)] += round(potential_value, 2)
-
-        world_factions_data = {}
-        if world.factions: # Check if World has a WorldFactionState object
-            wfs = world.factions 
-
-            controlled_by_faction_id = None
-            if wfs.control:
-                controlled_by_faction_id = wfs.control
-                world_factions_data[str(controlled_by_faction_id)] = {
-                    "influence": wfs.influence.get(controlled_by_faction_id, 0.0),
-                    "presence": True,
-                    "controlled_by": True
-                }
-            
-            # Then, add all other factions that have influence (if not the controller)
-            for fac_id, influence_val in wfs.influence.items():
-                if fac_id != controlled_by_faction_id: # Only add if not already handled as controller
-                     world_factions_data[str(fac_id)] = {
-                        "influence": influence_val,
-                        "presence": True,
-                        "controlled_by": False
-                    }
+    _rebuild_cache_from_state(universe)
+    sim_controller = SimulationController(universe)
 
 
-        # Calculate faction evaluations for the current world
-        faction_evaluations = {}
-        for faction_id, faction in universe.factions.items():
-            value = compute_world_value(faction, world, universe)
-            faction_evaluations[str(faction_id)] = round(value, 2)
-
-        is_capital = world_id in capital_world_ids # Determine if this world is a capital
-        
-        cached_nodes.append({
-            "id": str(world.id),
-            "name": world.name,
-            "stability": round(world.stability, 2),
-            "prosperity": round(world.prosperity, 2),
-            "num_planets": len(world.planets),
-            "aggregated_resources": dict(world_resources),
-            "detailed_planets": detailed_planets,
-            "x": world.x,
-            "y": world.y,
-            "factions": world_factions_data,
-            "faction_evaluations": faction_evaluations, # Add faction evaluations
-            "is_capital": is_capital, # Add the new field
-            "capital_planet_name": current_world_capital_planet_name, # Add the specific capital planet name
-        })
-    
-    cached_edges = generate_non_intersecting_lanes(universe.worlds)
+def _sync_cache_from_controller():
+    if sim_controller is None:
+        return
+    with sim_controller.lock():
+        state = sim_controller.get_state()
+        _rebuild_cache_from_state(state)
 
 @app.before_request
 def before_first_request():
-    if universe is None:
+    if universe is None or sim_controller is None:
         _initialize_universe_and_cache()
 
 @app.route('/')
@@ -331,6 +353,7 @@ def index():
 
 @app.route('/universe_data')
 def get_universe_data():
+    _sync_cache_from_controller()
     return jsonify({"nodes": cached_nodes, "edges": cached_edges, "factions": cached_factions})
 
 @app.route('/update_node_positions', methods=['POST'])
@@ -342,15 +365,17 @@ def update_node_positions():
     if not node_positions:
         return jsonify({"error": "Missing node_positions"}), 400
 
-    if universe is None:
+    if sim_controller is None:
         return jsonify({"error": "Universe not initialized"}), 500
 
     # Update the global universe object's world coordinates
-    for world_id_str, pos in node_positions.items():
-        world_id = WorldId(world_id_str)
-        if world_id in universe.worlds:
-            universe.worlds[world_id].x = pos['x']
-            universe.worlds[world_id].y = pos['y']
+    with sim_controller.lock():
+        universe = sim_controller.get_state()
+        for world_id_str, pos in node_positions.items():
+            world_id = WorldId(world_id_str)
+            if world_id in universe.worlds:
+                universe.worlds[world_id].x = pos['x']
+                universe.worlds[world_id].y = pos['y']
     
     # Update the cached_nodes as well for consistency
     for node_data in cached_nodes:
@@ -359,6 +384,61 @@ def update_node_positions():
             node_data["y"] = node_positions[node_data["id"]]['y']
 
     return jsonify({"message": "Node positions updated successfully"}), 200
+
+
+@app.route('/sim/state')
+def sim_state():
+    if sim_controller is None:
+        return jsonify({"error": "Universe not initialized"}), 500
+    _sync_cache_from_controller()
+    return jsonify({
+        "nodes": cached_nodes,
+        "edges": cached_edges,
+        "factions": cached_factions,
+        "meta": {
+            "running": sim_controller.is_running(),
+            "tick": sim_controller.tick_count(),
+        },
+    })
+
+
+@app.route('/sim/play', methods=['POST'])
+def sim_play():
+    if sim_controller is None:
+        return jsonify({"error": "Universe not initialized"}), 500
+    sim_controller.play()
+    return jsonify({"status": "playing"})
+
+
+@app.route('/sim/pause', methods=['POST'])
+def sim_pause():
+    if sim_controller is None:
+        return jsonify({"error": "Universe not initialized"}), 500
+    sim_controller.pause()
+    return jsonify({"status": "paused"})
+
+
+@app.route('/sim/step', methods=['POST'])
+def sim_step():
+    if sim_controller is None:
+        return jsonify({"error": "Universe not initialized"}), 500
+    data = request.get_json(silent=True) or {}
+    steps = int(data.get("steps", 1))
+    steps = max(1, steps)
+    for _ in range(steps):
+        sim_controller.step_once()
+    return jsonify({"status": "stepped", "steps": steps, "tick": sim_controller.tick_count()})
+
+
+@app.route('/sim/rewind', methods=['POST'])
+def sim_rewind():
+    if sim_controller is None:
+        return jsonify({"error": "Universe not initialized"}), 500
+    data = request.get_json(silent=True) or {}
+    steps = int(data.get("steps", 1))
+    steps = max(1, steps)
+    sim_controller.rewind(steps=steps)
+    return jsonify({"status": "rewound", "steps": steps, "tick": sim_controller.tick_count()})
 
 
 if __name__ == '__main__':
