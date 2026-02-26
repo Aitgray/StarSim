@@ -4,6 +4,7 @@ from collections import defaultdict, deque
 import random
 import json
 import threading # New: For thread-safe access to simulation state
+import time
 from typing import Dict, List, Set, Tuple, Optional
 
 # Add the project root to the Python path
@@ -22,6 +23,7 @@ from src.starsim.generation.bootstrap import apply_planet_potentials_to_world
 from src.starsim.generation.lane_gen import generate_non_intersecting_lanes # Import new lane generation
 from src.starsim.factions.model import Faction, WorldFactionState # Imported for WorldFactionState control
 from src.starsim.factions.ai import compute_world_value # Import compute_world_value
+from src.starsim.io.save_load import to_dict, from_dict
 
 
 app = Flask(__name__)
@@ -39,6 +41,59 @@ universe = None
 cached_nodes = []
 cached_edges = []
 cached_factions = []
+sim_controller = None
+
+
+class SimulationController:
+    def __init__(self, initial_state: UniverseState, tick_interval_s: float = 0.5, max_history: int = 500):
+        self._lock = threading.RLock()
+        self._stop_event = threading.Event()
+        self._thread = None
+        self._running = False
+        self._tick_interval_s = tick_interval_s
+        self._max_history = max_history
+        self._history = deque(maxlen=max_history)
+        self._state = initial_state
+        self._history.append(to_dict(self._state))
+
+    def get_state(self) -> UniverseState:
+        with self._lock:
+            return self._state
+
+    def play(self):
+        with self._lock:
+            self._running = True
+            if self._thread is None or not self._thread.is_alive():
+                self._thread = threading.Thread(target=self._run_loop, daemon=True)
+                self._thread.start()
+
+    def pause(self):
+        with self._lock:
+            self._running = False
+
+    def step_once(self):
+        with self._lock:
+            sim.step(self._state)
+            self._history.append(to_dict(self._state))
+
+    def rewind(self, steps: int = 1):
+        with self._lock:
+            for _ in range(steps):
+                if len(self._history) > 1:
+                    self._history.pop()
+            snapshot = self._history[-1]
+            self._state = from_dict(snapshot)
+
+    def stop(self):
+        self._stop_event.set()
+
+    def _run_loop(self):
+        while not self._stop_event.is_set():
+            with self._lock:
+                if self._running:
+                    sim.step(self._state)
+                    self._history.append(to_dict(self._state))
+            time.sleep(self._tick_interval_s)
 
 # --- Helper for shortest path in hops (BFS) ---
 def _get_shortest_path_hops(lane_graph: Dict[WorldId, List[WorldId]], start_node: WorldId, target_nodes: Set[WorldId], min_hops: int) -> Optional[int]:
