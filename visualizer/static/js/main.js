@@ -446,6 +446,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function refresh() {
             node.style("fill", d => getNodeColor(d));
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+            label
+                .attr("x", d => d.x)
+                .attr("y", d => d.y - 15);
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
         }
 
         // Attach event listeners for sim controls (once)
