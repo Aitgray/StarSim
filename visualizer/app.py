@@ -25,6 +25,7 @@ from src.starsim.factions.model import Faction, WorldFactionState # Imported for
 from src.starsim.factions.ai import compute_world_value # Import compute_world_value
 from src.starsim.io.save_load import to_dict, from_dict
 from src.starsim.economy.recipes import recipe_registry
+from src.starsim.economy.commodities import commodity_registry
 
 
 app = Flask(__name__)
@@ -256,6 +257,8 @@ def _initialize_universe_and_cache():
 
     if not recipe_registry.all_recipes():
         recipe_registry.load_from_yaml(DATA_PATH / "recipes.yaml")
+    if not commodity_registry.all_commodities():
+        commodity_registry.load_from_yaml(DATA_PATH / "commodities.yaml")
     
     test_seed = 40 # Use a fixed seed for consistent generation
     rng = random.Random(test_seed)
