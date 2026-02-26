@@ -1,7 +1,8 @@
 from typing import List, Tuple
 from collections import defaultdict
+
 from ..core.ids import CommodityId
-from ..world.model import World # Import World for type hinting
+from ..core.log import AuditLog
 
 
 def generate_gazette_report(universe):
@@ -62,3 +63,17 @@ def generate_gazette_report(universe):
 
     report += "\n--- End Gazette ---\n"
     return report
+
+
+def generate_gazette(log: AuditLog, tick: int) -> str:
+    """
+    Generates a concise gazette report from an AuditLog.
+    """
+    lines = [f"== Tick {tick} Report =="]
+    for entry in log.entries:
+        reason = entry.reason or ""
+        if reason:
+            lines.append(f"[{entry.type}] {reason}")
+        else:
+            lines.append(f"[{entry.type}]")
+    return "\n".join(lines) + "\n"

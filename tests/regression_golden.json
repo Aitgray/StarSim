@@ -5,67 +5,43 @@
     "sys-1": {
       "id": "sys-1",
       "name": "World sys-1",
-      "stability": 0.8082,
-      "prosperity": 0.8082,
-      "tech": 0.7943,
+      "stability": 0.1522,
+      "prosperity": 0.1522,
+      "tech": 0.9124,
       "planets": [
         {
-          "type": "continental",
-          "habitability": 0.8082,
+          "type": "barren_cold",
+          "habitability": 0.0206,
           "resource_potentials": {
-            "alloy": 0.3549,
-            "consumer_goods": 2.9161,
-            "energy": 2.6862,
-            "food": 4.2129,
-            "minerals": 1.3487
-          },
-          "tags": []
-        },
-        {
-          "type": "continental",
-          "habitability": 0.3236,
-          "resource_potentials": {
-            "alloy": 0.19,
-            "consumer_goods": 0.6831,
-            "energy": 2.0079,
-            "food": 1.4379,
-            "minerals": 1.4444
-          },
-          "tags": []
-        },
-        {
-          "type": "continental",
-          "habitability": 0.9419,
-          "resource_potentials": {
-            "alloy": 0.9402,
-            "consumer_goods": 2.7415,
-            "energy": 3.9364,
-            "food": 2.0138,
-            "minerals": 2.4891
-          },
-          "tags": []
-        },
-        {
-          "type": "desert",
-          "habitability": 0.265,
-          "resource_potentials": {
-            "alloy": 0.2164,
-            "consumer_goods": 0.8019,
-            "energy": 2.6142,
+            "alloy": 1.9177,
+            "consumer_goods": 0.0,
+            "energy": 0.1557,
             "food": 0.0,
-            "minerals": 1.9292
+            "minerals": 5.3483
           },
           "tags": []
         },
         {
-          "type": "ocean",
-          "habitability": 0.6249,
+          "type": "continental",
+          "habitability": 0.6742,
           "resource_potentials": {
-            "alloy": 0.7366,
-            "consumer_goods": 1.6979,
-            "energy": 1.8291,
-            "food": 5.3123,
-            "minerals": 1.7711
+            "alloy": 0.4145,
+            "consumer_goods": 2.7711,
+            "energy": 3.3125,
+            "food": 2.398,
+            "minerals": 1.3577
+          },
+          "tags": []
+        },
+        {
+          "type": "ice",
+          "habitability": 0.1522,
+          "resource_potentials": {
+            "alloy": 1.4763,
+            "consumer_goods": 0.7329,
+            "energy": 1.6272,
+            "food": 0.1868,
+            "minerals": 3.8353
           },
           "tags": []
         }
@@ -74,9 +50,9 @@
     "sys-2": {
       "id": "sys-2",
       "name": "World sys-2",
-      "stability": 0.9458,
-      "prosperity": 0.9458,
-      "tech": 0.6008,
+      "stability": 0.5212,
+      "prosperity": 0.5212,
+      "tech": 0.8131,
       "planets": [
         {
           "type": "continental",
@@ -92,25 +68,25 @@
         },
         {
           "type": "continental",
-          "habitability": 0.8779,
+          "habitability": 0.8113,
           "resource_potentials": {
-            "alloy": 0.7888,
-            "consumer_goods": 2.5448,
-            "energy": 1.2357,
-            "food": 5.6823,
-            "minerals": 2.9892
+            "alloy": 0.0117,
+            "consumer_goods": 2.4247,
+            "energy": 2.1643,
+            "food": 2.7179,
+            "minerals": 2.5982
           },
           "tags": []
         },
         {
-          "type": "continental",
-          "habitability": 0.8903,
+          "type": "desert",
+          "habitability": 0.5212,
           "resource_potentials": {
-            "alloy": 0.3258,
-            "consumer_goods": 2.2202,
-            "energy": 2.4423,
-            "food": 4.5044,
-            "minerals": 1.1231
+            "alloy": 0.4337,
+            "consumer_goods": 1.8321,
+            "energy": 4.2681,
+            "food": 0.2577,
+            "minerals": 3.3394
           },
           "tags": []
         }

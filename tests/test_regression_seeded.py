@@ -68,7 +68,7 @@ def test_seeded_regression():
     current_summary = get_summary_metrics(initial_state)
 
     # Define path to the golden file (create it if it doesn't exist for first run)
-    golden_file_path = Path(__file__).parent / "regression_golden.json"
+    golden_file_path = Path(__file__).parent / "regression_seeded_golden.json"
 
     if not golden_file_path.exists():
         print(f"Regression golden file not found. Creating: {golden_file_path}")

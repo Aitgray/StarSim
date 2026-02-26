@@ -1,5 +1,9 @@
-import pytest
+import os
+import tempfile
+import uuid
 from pathlib import Path
+
+import pytest
 
 from src.starsim.economy.commodities import commodity_registry
 from src.starsim.economy.recipes import recipe_registry
@@ -31,6 +35,13 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     """Ensures --update-goldens is only used with 'test_generator_regression.py'."""
+    tmp_root = Path(".pytest_tmp_local").resolve()
+    tmp_root.mkdir(exist_ok=True)
+    os.environ["TMPDIR"] = str(tmp_root)
+    os.environ["TEMP"] = str(tmp_root)
+    os.environ["TMP"] = str(tmp_root)
+    tempfile.tempdir = str(tmp_root)
+
     if config.option.update_goldens:
         if not any("test_generator_regression.py" in arg for arg in config.args):
             # Only warn if the user hasn't explicitly specified a file/dir pattern
@@ -39,3 +50,12 @@ def pytest_configure(config):
                 "The --update-goldens flag is intended for use with test_generator_regression.py. "
                 "Specify the test file explicitly or use it carefully.",
             )
+
+
+@pytest.fixture
+def tmp_path():
+    base = Path(".pytest_tmp_local").resolve()
+    base.mkdir(exist_ok=True)
+    path = base / f"tmp-{uuid.uuid4().hex}"
+    path.mkdir(parents=True, exist_ok=True)
+    return path

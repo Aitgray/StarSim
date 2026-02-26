@@ -244,13 +244,14 @@ def from_dict(data: Dict[str, Any]) -> UniverseState:
     active_shipments = []
     if 'active_shipments' in data:
         for s_data in data['active_shipments']:
+            lane_id = s_data.get('lane_id')
             shipment = Shipment(
                 commodity_id=CommodityId(s_data['commodity_id']),
                 quantity=s_data['quantity'],
                 source_world_id=WorldId(s_data['source_world_id']),
                 destination_world_id=WorldId(s_data['destination_world_id']),
                 eta_tick=s_data['eta_tick'],
-                lane_id=s_data.get('lane_id'),
+                lane_id=LaneId(lane_id) if lane_id else None,
             )
             active_shipments.append(shipment)
 

@@ -75,9 +75,10 @@ def consume(world: "World", tick: int):
         decline_factor = food_shortage_ratio * 0.05
         population.size = max(0, math.floor(population.size * (1.0 - decline_factor)))
     else:
-        growth_multiplier = (world.stability + world.prosperity) / 2.0
-        growth_amount = population.size * population.growth_rate * growth_multiplier
-        population.size = math.floor(population.size * (1.0 + growth_amount / population.size))
+        if population.size > 0:
+            growth_multiplier = (world.stability + world.prosperity) / 2.0
+            growth_amount = population.size * population.growth_rate * growth_multiplier
+            population.size = math.floor(population.size * (1.0 + growth_amount / population.size))
     
     # Update world unrest and scarcity based on food shortage
     world.scarcity = min(1.0, world.scarcity + food_shortage_ratio * 0.02)

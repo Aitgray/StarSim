@@ -1,12 +1,22 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List, Dict, Any
 
+from ..core.ids import WorldId, LaneId
+from .ai import select_action
+from .actions import (
+    expand_influence,
+    reinforce,
+    raid_lane,
+    patrol_lane,
+    aid_world,
+    invest_civilian_action,
+    invest_military_action,
+)
+
 if TYPE_CHECKING:
     from ..core.state import UniverseState
     from ..core.ids import FactionId, WorldId, LaneId
     from .model import Faction
-    from .ai import select_action
-    from .actions import expand_influence, reinforce, raid_lane, patrol_lane, aid_world, invest_civilian_action, invest_military_action
 
 
 def apply_faction_actions(state: UniverseState):

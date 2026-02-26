@@ -15,7 +15,7 @@ BASE_POPULATION = 1_000_000
 PRODUCTION_CAP_SCALING_FACTOR = 100.0
 
 
-def apply_planet_potentials_to_world(world: "World", universe_state: "UniverseState"):
+def apply_planet_potentials_to_world(world: "World", universe_state: "UniverseState" = None):
     """
     Applies generated planet potentials to a world's starting state.
 

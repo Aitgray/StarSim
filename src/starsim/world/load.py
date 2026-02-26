@@ -88,8 +88,24 @@ def load_universe(path: Path) -> UniverseState:
             needs = {CommodityId(c_id): qty for c_id, qty in pop_data.get('needs', {}).items()}
             population = Population(
                 size=pop_data.get('size', 0),
-                growth_rate=pop_data.get('growth_rate', 0.0),
+                growth_rate=pop_data.get('growth_rate', Population().growth_rate),
                 needs=needs,
+                food_required_per_capita_per_tick=pop_data.get(
+                    'food_required_per_capita_per_tick',
+                    Population().food_required_per_capita_per_tick,
+                ),
+                consumer_goods_required_per_capita_per_tick=pop_data.get(
+                    'consumer_goods_required_per_capita_per_tick',
+                    Population().consumer_goods_required_per_capita_per_tick,
+                ),
+                consumer_goods_excess_burn_rate=pop_data.get(
+                    'consumer_goods_excess_burn_rate',
+                    Population().consumer_goods_excess_burn_rate,
+                ),
+                energy_upkeep_per_capita_per_tick=pop_data.get(
+                    'energy_upkeep_per_capita_per_tick',
+                    Population().energy_upkeep_per_capita_per_tick,
+                ),
             )
 
         industry = None
@@ -116,8 +132,11 @@ def load_universe(path: Path) -> UniverseState:
             
             # Populate garrison (if present in YAML)
             garrison_data = raw_world_fac_data.get('garrison', {})
-            for res_id_str, qty in garrison_data.items():
-                wfs_instance.garrison[CommodityId(res_id_str)] = qty
+            for fac_id_str, qty in garrison_data.items():
+                faction_id = FactionId(fac_id_str)
+                if faction_id not in factions:
+                    raise UniverseSchemaError(f"World '{world_id}' references unknown faction '{fac_id_str}' in garrison data.")
+                wfs_instance.garrison[faction_id] = qty
 
             # Set control (if present)
             controller_id_str = raw_world_fac_data.get('control')

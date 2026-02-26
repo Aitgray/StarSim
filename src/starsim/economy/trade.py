@@ -15,6 +15,10 @@ def build_candidate_trades(state: UniverseState) -> List[Shipment]:
     Identifies profitable trade opportunities along direct neighbor lanes.
     """
     candidate_shipments: List[Shipment] = []
+    incoming_by_world_commodity = defaultdict(float)
+
+    for shipment in state.active_shipments:
+        incoming_by_world_commodity[(shipment.destination_world_id, shipment.commodity_id)] += shipment.quantity
 
     for lane_id, lane in state.lanes.items():
         world_a = state.worlds.get(lane.a)
@@ -32,14 +36,16 @@ def build_candidate_trades(state: UniverseState) -> List[Shipment]:
 
             if price_a is None or price_b is None:
                 continue # Cannot trade if price unknown in either market
+            
+            base_price = state.commodity_registry.get(commodity.id).base_price
 
             # Calculate shipping cost (simple model: proportional to distance and hazard)
             # This should eventually be more sophisticated
-            shipping_cost_per_unit = state.commodity_registry.get(commodity.id).base_price * (lane.distance * 0.01 + lane.hazard * 0.05)
+            shipping_cost_per_unit = base_price * (lane.distance * 0.01 + lane.hazard * 0.05)
 
             # Check for arbitrage from A to B
             profit_a_to_b = price_b - price_a - shipping_cost_per_unit
-            if profit_a_to_b > TRADE_THRESHOLD:
+            if price_a < base_price and price_b > base_price and profit_a_to_b > TRADE_THRESHOLD:
                 # How much to trade? For now, a fixed small amount or available surplus
                 trade_qty = min(market_a.inventory.get(commodity.id), 10.0) # Trade up to 10 units
                 if trade_qty > 0:
@@ -56,8 +62,12 @@ def build_candidate_trades(state: UniverseState) -> List[Shipment]:
             
             # Check for arbitrage from B to A
             profit_b_to_a = price_a - price_b - shipping_cost_per_unit
-            if profit_b_to_a > TRADE_THRESHOLD:
-                trade_qty = min(market_b.inventory.get(commodity.id), 10.0)
+            if price_b < base_price and price_a > base_price and profit_b_to_a > TRADE_THRESHOLD:
+                dest_target = market_a.targets.get(commodity.id, 10.0)
+                dest_qty = market_a.inventory.get(commodity.id)
+                incoming_qty = incoming_by_world_commodity.get((world_a.id, commodity.id), 0.0)
+                dest_deficit = max(0.0, dest_target - (dest_qty + incoming_qty))
+                trade_qty = min(market_b.inventory.get(commodity.id), 10.0, dest_deficit)
                 if trade_qty > 0:
                     candidate_shipments.append(
                         Shipment(

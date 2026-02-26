@@ -13,8 +13,12 @@ if TYPE_CHECKING:
 def evaluate_event_conditions(event_def: EventDef, world: World, state: UniverseState) -> float:
     """
     Evaluates an event's conditions against a world's state to determine
-    a weight multiplier. Returns 1.0 if no conditions, or if conditions are met.
+    a weight multiplier. Returns 1.0 if no conditions. Returns 0.0 if any
+    condition is not met (i.e., conditions act as gates).
     """
+    if not event_def.conditions:
+        return 1.0
+
     multiplier = 1.0
     for condition in event_def.conditions:
         condition_type = condition["type"]
@@ -51,6 +55,9 @@ def evaluate_event_conditions(event_def: EventDef, world: World, state: Universe
                     condition_met = True
                     break # Only need one lane to meet condition
         # TODO: Add more complex conditions like faction tension, etc.
+
+        if not condition_met:
+            return 0.0
 
     return multiplier
 

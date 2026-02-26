@@ -1,6 +1,48 @@
 # data/universe.yaml
 seed: 42
-worlds: [] # Removed specific worlds
+worlds:
+  - id: "sol"
+    name: "Sol"
+    stability: 0.9
+    prosperity: 0.9
+    tech: 0.8
+    tags: ["core"]
+    market:
+      inventory:
+        food: 300.0
+        minerals: 200.0
+        energy: 100.0
+        consumer_goods: 0.0
+      prices:
+        food: 10.0
+        minerals: 5.0
+        energy: 1.0
+        consumer_goods: 20.0
+      targets:
+        food: 100.0
+        minerals: 50.0
+        energy: 50.0
+        consumer_goods: 20.0
+    population:
+      size: 1000000
+      growth_rate: 0.01
+    industry:
+      caps:
+        farm_food: 5.0
+        mine_minerals: 5.0
+        refine_consumer_goods: 2.0
+  - id: "alpha-centauri"
+    name: "Alpha Centauri"
+    stability: 0.8
+    prosperity: 0.7
+    tech: 0.6
+    tags: ["frontier"]
+  - id: "proxima-centauri"
+    name: "Proxima Centauri"
+    stability: 0.7
+    prosperity: 0.6
+    tech: 0.5
+    tags: ["frontier"]
 
 factions:
   - id: "human_alliance"
@@ -22,4 +64,22 @@ factions:
     capital_world_id: null # Will be assigned dynamically
     resource_desire: 0.5 # Default resource desire scalar
 
-lanes: [] # Removed specific lanes
+lanes:
+  - id: "sol-alpha"
+    a: "sol"
+    b: "alpha-centauri"
+    distance: 2.0
+    hazard: 0.1
+    capacity: 20.0
+  - id: "sol-proxima"
+    a: "sol"
+    b: "proxima-centauri"
+    distance: 3.0
+    hazard: 0.2
+    capacity: 15.0
+  - id: "alpha-proxima"
+    a: "alpha-centauri"
+    b: "proxima-centauri"
+    distance: 1.5
+    hazard: 0.05
+    capacity: 10.0

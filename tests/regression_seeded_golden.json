@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "tick": 5,
+  "world_prices": {
+    "sol": {
+      "alloy": 80.52550000000005,
+      "consumer_goods": 31.917380000000012,
+      "food": 5.0
+    }
+  },
+  "world_controls": {},
+  "total_trade_volume": 0.0,
+  "lane_hazards": {
+    "sol-alpha": 0.1,
+    "sol-proxima": 0.2,
+    "alpha-proxima": 0.05
+  },
+  "active_shipments_count": 0
+}

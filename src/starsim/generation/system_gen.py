@@ -88,10 +88,16 @@ def _get_closest_worlds_between_components(
     return closest_pair[0], closest_pair[1], min_distance
 
 
-def generate_planet(rng: random.Random, planet_type_data: Dict[str, Any], planet_names_data: Dict[str, List[str]]) -> Planet:
+def generate_planet(
+    rng: random.Random,
+    planet_type_data: Dict[str, Any],
+    planet_names_data: Optional[Dict[str, List[str]]] = None,
+) -> Planet:
     """
     Generates a single planet based on provided planet type data and assigns a name.
     """
+    if planet_names_data is None:
+        planet_names_data = {}
     # Sample habitability
     h_bands, h_weights = _process_weights_for_random_selection(planet_type_data["habitability_distribution"])
     selected_band = rng.choices(h_bands, weights=h_weights, k=1)[0]["band"]
@@ -134,11 +140,20 @@ def generate_planet(rng: random.Random, planet_type_data: Dict[str, Any], planet
     )
 
 
-def generate_world(world_id_str: str, rng: random.Random, system_template_data: Dict[str, Any], planet_types_data: Dict[str, Any], planet_names_data: Dict[str, List[str]], system_names_data: List[str]) -> World:
+def generate_world(
+    world_id_str: str,
+    rng: random.Random,
+    system_template_data: Dict[str, Any],
+    planet_types_data: Dict[str, Any],
+    planet_names_data: Optional[Dict[str, List[str]]] = None,
+    system_names_data: Optional[List[str]] = None,
+) -> World:
     """
     Generates a World object for a given system, including its planets and a name from a list.
     """
     world_id = WorldId(world_id_str)
+    if not system_names_data:
+        system_names_data = [f"World {world_id_str}"]
     world_name = rng.choice(system_names_data) # Assign a random system name
 
     min_planets = system_template_data["min_planets"]
@@ -174,7 +189,15 @@ def generate_world(world_id_str: str, rng: random.Random, system_template_data: 
     )
     return world
 
-def generate_universe(rng: random.Random, n_systems: int, system_templates_data: Dict[str, Any], planet_types_data: Dict[str, Any], planet_names_data: Dict[str, List[str]], system_names_data: List[str], initial_state: Optional[UniverseState] = None) -> UniverseState:
+def generate_universe(
+    rng: random.Random,
+    n_systems: int,
+    system_templates_data: Dict[str, Any],
+    planet_types_data: Dict[str, Any],
+    planet_names_data: Optional[Dict[str, List[str]]] = None,
+    system_names_data: Optional[List[str]] = None,
+    initial_state: Optional[UniverseState] = None,
+) -> UniverseState:
     """
     Generates an entire UniverseState with N systems, potentially extending an initial state.
     """
