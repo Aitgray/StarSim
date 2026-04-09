@@ -24,7 +24,7 @@ def load_universe(path: Path) -> UniverseState:
         data = yaml.safe_load(f)
 
     if data is None:
-        return None # Explicitly return None if data is empty
+        raise UniverseSchemaError("Universe YAML data is empty.")
 
     seed = data.get('seed')
     if seed is None:

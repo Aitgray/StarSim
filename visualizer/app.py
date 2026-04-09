@@ -414,12 +414,12 @@ def update_node_positions():
             world_id = WorldId(world_id_str)
             parsed_positions[world_id] = {"x": pos["x"], "y": pos["y"]}
         sim_controller.update_positions(parsed_positions)
-    
-    # Update the cached_nodes as well for consistency
-    for node_data in cached_nodes:
-        if node_data["id"] in node_positions:
-            node_data["x"] = node_positions[node_data["id"]]['x']
-            node_data["y"] = node_positions[node_data["id"]]['y']
+
+        # Update the cached_nodes as well for consistency (inside lock to prevent races)
+        for node_data in cached_nodes:
+            if node_data["id"] in node_positions:
+                node_data["x"] = node_positions[node_data["id"]]['x']
+                node_data["y"] = node_positions[node_data["id"]]['y']
 
     return jsonify({"message": "Node positions updated successfully"}), 200
 
@@ -461,7 +461,10 @@ def sim_step():
     if sim_controller is None:
         return jsonify({"error": "Universe not initialized"}), 500
     data = request.get_json(silent=True) or {}
-    steps = int(data.get("steps", 1))
+    try:
+        steps = int(data.get("steps", 1))
+    except (ValueError, TypeError):
+        return jsonify({"error": "steps must be an integer"}), 400
     steps = max(1, steps)
     for _ in range(steps):
         sim_controller.step_once()
@@ -473,7 +476,10 @@ def sim_rewind():
     if sim_controller is None:
         return jsonify({"error": "Universe not initialized"}), 500
     data = request.get_json(silent=True) or {}
-    steps = int(data.get("steps", 1))
+    try:
+        steps = int(data.get("steps", 1))
+    except (ValueError, TypeError):
+        return jsonify({"error": "steps must be an integer"}), 400
     steps = max(1, steps)
     sim_controller.rewind(steps=steps)
     return jsonify({"status": "rewound", "steps": steps, "tick": sim_controller.tick_count()})

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Any, Dict
 import math # Import math for sqrt
 from ..core.ids import CommodityId # Import CommodityId
 

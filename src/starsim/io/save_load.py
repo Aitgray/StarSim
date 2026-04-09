@@ -171,7 +171,7 @@ def from_dict(data: Dict[str, Any]) -> UniverseState:
             needs = {CommodityId(c_id): qty for c_id, qty in pop_data.get('needs', {}).items()}
             population = Population(
                 size=pop_data.get('size', 0),
-                growth_rate=pop_data.get('growth_rate', 0.0),
+                growth_rate=pop_data.get('growth_rate', 0.01),
                 needs=needs,
                 food_required_per_capita_per_tick=pop_data.get('food_required_per_capita_per_tick', 0.0001),
                 consumer_goods_required_per_capita_per_tick=pop_data.get('consumer_goods_required_per_capita_per_tick', 0.0001),
