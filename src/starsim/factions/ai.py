@@ -121,7 +121,11 @@ def select_action(faction: Faction, state: UniverseState) -> Dict[str, Any]:
     Selects an action for the faction based on world values and current state.
     This is a greedy, simplified selection.
     """
-    best_action = {"type": "no_action", "target": None, "score": -float("inf")}
+    best_action: Dict[str, Any] = {
+        "type": "no_action",
+        "target": None,
+        "score": -float("inf"),
+    }
 
     # Find all worlds currently controlled by this faction
     controlled_worlds = [

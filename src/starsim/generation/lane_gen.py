@@ -118,7 +118,7 @@ def generate_non_intersecting_lanes(worlds: Dict[WorldId, World]) -> List[Dict]:
     final_edges = list(mst_edges)
 
     # 5. Add additional edges to increase node degrees up to a maximum of 3
-    node_degrees_current = defaultdict(int)
+    node_degrees_current: defaultdict[WorldId, int] = defaultdict(int)
     for w1, w2, _ in mst_edges:
         node_degrees_current[w1] += 1
         node_degrees_current[w2] += 1

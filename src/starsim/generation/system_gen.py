@@ -42,7 +42,9 @@ def _get_connected_components(
     """
     Finds all connected components in the graph of worlds and lanes using BFS.
     """
-    adj_list = {world_id: [] for world_id in worlds.keys()}
+    adj_list: Dict[WorldId, List[WorldId]] = {
+        world_id: [] for world_id in worlds.keys()
+    }
     for lane in lanes.values():
         adj_list[lane.a].append(lane.b)
         adj_list[lane.b].append(lane.a)
@@ -75,7 +77,7 @@ def _get_closest_worlds_between_components(
     Returns (world_id_a, world_id_b, distance).
     """
     min_distance = float("inf")
-    closest_pair = (None, None)  # type: ignore
+    closest_pair: Tuple[Optional[WorldId], Optional[WorldId]] = (None, None)
 
     for world_id_a in component1:
         for world_id_b in component2:
@@ -88,6 +90,7 @@ def _get_closest_worlds_between_components(
                 min_distance = distance
                 closest_pair = (world_id_a, world_id_b)
 
+    assert closest_pair[0] is not None and closest_pair[1] is not None
     return closest_pair[0], closest_pair[1], min_distance
 
 

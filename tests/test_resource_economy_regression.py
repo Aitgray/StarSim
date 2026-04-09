@@ -203,11 +203,13 @@ def test_consumer_goods_excess_bounded(sim_universe: UniverseState):
     For now, assert that excess is not ridiculously high after a few ticks.
     """
     test_world = sim_universe.worlds[WorldId("test-eco-world")]
+    assert test_world.market is not None
+    assert test_world.industry is not None
     initial_cg = test_world.market.inventory.get(CommodityId("consumer_goods"))
 
     # Ensure a large surplus of CG and some production
     test_world.market.inventory.add(CommodityId("consumer_goods"), 10_000.0)
-    test_world.industry.caps[CommodityId("refine_consumer_goods")] = (
+    test_world.industry.caps[RecipeId("refine_consumer_goods")] = (
         500.0  # Ensure production (Placeholder RecipeId)
     )
 

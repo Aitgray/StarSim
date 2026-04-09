@@ -1,5 +1,6 @@
 import pytest
 from pathlib import Path
+from typing import Iterator
 
 from src.starsim.core.ids import WorldId, LaneId, CommodityId
 from src.starsim.core.state import UniverseState
@@ -21,7 +22,7 @@ def setup_registries():
 
 
 @pytest.fixture
-def two_world_trade_state() -> UniverseState:
+def two_world_trade_state() -> Iterator[UniverseState]:
     state = UniverseState(seed=123)
 
     # World 1: Source of food, low price (low inventory means price should rise)

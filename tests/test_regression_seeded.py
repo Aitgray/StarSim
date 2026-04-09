@@ -15,7 +15,7 @@ REGRESSION_TICKS = 5
 
 def get_summary_metrics(state: UniverseState) -> Dict[str, Any]:
     """Extracts key metrics from the UniverseState for regression comparison."""
-    summary = {
+    summary: Dict[str, Any] = {
         "seed": state.seed,
         "tick": state.tick,
         "world_prices": {},

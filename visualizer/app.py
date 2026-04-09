@@ -47,11 +47,11 @@ PLANET_NAMES = load_planet_names(DATA_PATH / "generation" / "planet_names.yaml")
 SYSTEM_NAMES = load_system_names(DATA_PATH / "generation" / "system_names.yaml")
 
 # Global variables to store the universe state and cached data
-universe = None
-cached_nodes = []
-cached_edges = []
-cached_factions = []
-sim_controller = None
+universe: Optional[UniverseState] = None
+cached_nodes: List[Dict] = []
+cached_edges: list = []
+cached_factions: List[Dict] = []
+sim_controller: Optional["SimulationController"] = None
 
 
 class SimulationController:
@@ -67,10 +67,10 @@ class SimulationController:
         self._running = False
         self._tick_interval_s = tick_interval_s
         self._max_history = max_history
-        self._history = deque(maxlen=max_history)
+        self._history: deque[Dict] = deque(maxlen=max_history)
         self._state = initial_state
         self._tick_count = 0
-        self._positions = {}
+        self._positions: Dict[WorldId, Dict[str, float]] = {}
         self._history.append(to_dict(self._state))
 
     def get_state(self) -> UniverseState:
@@ -211,7 +211,7 @@ def _rebuild_cache_from_state(state: UniverseState):
 
     cached_nodes = []
     for world_id, world in state.worlds.items():
-        world_resources = defaultdict(float)
+        world_resources: defaultdict[str, float] = defaultdict(float)
         detailed_planets = []
 
         current_world_capital_planet_name = None

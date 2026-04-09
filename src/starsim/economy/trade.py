@@ -13,7 +13,7 @@ def build_candidate_trades(state: UniverseState) -> List[Shipment]:
     Identifies profitable trade opportunities along direct neighbor lanes.
     """
     candidate_shipments: List[Shipment] = []
-    incoming_by_world_commodity = defaultdict(float)
+    incoming_by_world_commodity: defaultdict[tuple, float] = defaultdict(float)
 
     for shipment in state.active_shipments:
         incoming_by_world_commodity[
@@ -120,6 +120,8 @@ def process_trade(state: UniverseState, allow_new_trades: bool = True):
                 if shipment.quantity <= remaining_capacity:
                     # Deduct from source inventory
                     source_world = state.worlds[shipment.source_world_id]
+                    if not source_world.market:
+                        continue
                     actual_deducted = source_world.market.inventory.remove_clamped(
                         shipment.commodity_id, shipment.quantity
                     )
@@ -142,6 +144,9 @@ def process_trade(state: UniverseState, allow_new_trades: bool = True):
     for shipment in state.active_shipments:
         if shipment.eta_tick <= state.tick:
             destination_world = state.worlds[shipment.destination_world_id]
+            if not destination_world.market:
+                remaining_shipments.append(shipment)
+                continue
             destination_world.market.inventory.add(
                 shipment.commodity_id, shipment.quantity
             )

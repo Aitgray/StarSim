@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import json
 import random
+from typing import Any, Dict
 
 from src.starsim.core.state import UniverseState
 from src.starsim.generation.system_gen import generate_universe
@@ -39,7 +40,7 @@ def normalize_universe_state(universe: UniverseState) -> dict:
     Normalizes the UniverseState for consistent comparison in regression tests.
     Removes non-deterministic elements and formats for easy diffing.
     """
-    normalized_data = {
+    normalized_data: Dict[str, Any] = {
         "seed": universe.seed,
         "tick": universe.tick,
         "worlds": {},
@@ -52,7 +53,7 @@ def normalize_universe_state(universe: UniverseState) -> dict:
 
     for world_id in sorted_world_ids:
         world = universe.worlds[world_id]
-        normalized_world = {
+        normalized_world: Dict[str, Any] = {
             "id": world.id,
             "name": world.name,
             "stability": round(world.stability, 4),

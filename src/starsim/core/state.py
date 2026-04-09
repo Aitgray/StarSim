@@ -26,7 +26,7 @@ from ..events.registry import (
 class UniverseState:
     seed: int
     tick: int = 0
-    rng: random.Random = field(default=None, init=True)  # Allow passing an existing RNG
+    rng: random.Random = field(default=None, init=True)  # type: ignore[assignment]
     worlds: Dict[WorldId, World] = field(default_factory=dict)
     lanes: Dict[LaneId, Lane] = field(default_factory=dict)
 

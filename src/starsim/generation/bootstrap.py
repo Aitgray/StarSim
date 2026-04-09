@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from math import floor
 
 from ..core.ids import CommodityId, RecipeId  # Import RecipeId
@@ -18,7 +18,7 @@ PRODUCTION_CAP_SCALING_FACTOR = 100.0
 
 
 def apply_planet_potentials_to_world(
-    world: "World", universe_state: "UniverseState" = None
+    world: "World", universe_state: "Optional[UniverseState]" = None
 ):
     """
     Applies generated planet potentials to a world's starting state.
