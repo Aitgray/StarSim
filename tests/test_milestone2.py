@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from src.starsim.world.load import load_universe, UniverseSchemaError
-from src.starsim.io.save_load import save_to_json, load_from_json, to_dict, from_dict
+from src.starsim.io.save_load import save_to_json, load_from_json, to_dict
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ lanes:
     # Use a temporary file
     with open("invalid_universe.yaml", "w") as f:
         f.write(invalid_yaml)
-    
+
     with pytest.raises(UniverseSchemaError):
         load_universe(Path("invalid_universe.yaml"))
 
@@ -64,21 +64,21 @@ def test_load_save_load_round_trip(universe_yaml_path):
 
     # Remove derived fields that are not part of serialization comparison
     for d in [initial_dict, loaded_dict]:
-        for world_data in d.get('worlds', []):
-            world_data.pop('_adj', None) # Remove derived adjacency if present
+        for world_data in d.get("worlds", []):
+            world_data.pop("_adj", None)  # Remove derived adjacency if present
 
     # Sort lists to ensure order doesn't matter
-    initial_dict['worlds'].sort(key=lambda x: x['id'])
-    loaded_dict['worlds'].sort(key=lambda x: x['id'])
-    initial_dict['lanes'].sort(key=lambda x: x['id'])
-    loaded_dict['lanes'].sort(key=lambda x: x['id'])
+    initial_dict["worlds"].sort(key=lambda x: x["id"])
+    loaded_dict["worlds"].sort(key=lambda x: x["id"])
+    initial_dict["lanes"].sort(key=lambda x: x["id"])
+    loaded_dict["lanes"].sort(key=lambda x: x["id"])
 
     # Sort planets within worlds for comparison
-    for world_data in initial_dict['worlds']:
-        if 'planets' in world_data:
-            world_data['planets'].sort(key=lambda x: x['type'])
-    for world_data in loaded_dict['worlds']:
-        if 'planets' in world_data:
-            world_data['planets'].sort(key=lambda x: x['type'])
+    for world_data in initial_dict["worlds"]:
+        if "planets" in world_data:
+            world_data["planets"].sort(key=lambda x: x["type"])
+    for world_data in loaded_dict["worlds"]:
+        if "planets" in world_data:
+            world_data["planets"].sort(key=lambda x: x["type"])
 
     assert initial_dict == loaded_dict

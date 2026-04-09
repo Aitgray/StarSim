@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any
 
 if TYPE_CHECKING:
     from ..core.state import UniverseState
-    from ..core.ids import WorldId, LaneId
+    from ..core.ids import LaneId
     from ..world.model import World
-    from ..economy.market import Market
 
 
 def apply_effect(effect: Dict[str, Any], world: World, state: UniverseState):
@@ -21,7 +20,9 @@ def apply_effect(effect: Dict[str, Any], world: World, state: UniverseState):
     elif effect_type == "change_unrest":
         delta = effect.get("delta", 0.0)
         world.unrest = max(0.0, min(1.0, world.unrest + delta))
-    elif effect_type == "change_scarcity": # Not currently used by events, but good to have
+    elif (
+        effect_type == "change_scarcity"
+    ):  # Not currently used by events, but good to have
         delta = effect.get("delta", 0.0)
         world.scarcity = max(0.0, min(1.0, world.scarcity + delta))
     elif effect_type == "add_inventory":
@@ -37,7 +38,7 @@ def apply_effect(effect: Dict[str, Any], world: World, state: UniverseState):
     elif effect_type == "change_lane_hazard":
         lane_id = effect.get("lane_id")
         delta = effect.get("delta", 0.0)
-        
+
         if lane_id:
             lane = state.lanes.get(LaneId(lane_id))
         else:
@@ -46,7 +47,7 @@ def apply_effect(effect: Dict[str, Any], world: World, state: UniverseState):
             if connected_lanes:
                 lane = state.rng.choice(connected_lanes)
             else:
-                lane = None # No connected lanes to affect
+                lane = None  # No connected lanes to affect
 
         if lane:
             lane.hazard = max(0.0, min(1.0, lane.hazard + delta))
@@ -56,9 +57,13 @@ def apply_effect(effect: Dict[str, Any], world: World, state: UniverseState):
         num_worlds = effect["num_worlds"]
 
         # Select random worlds
-        target_world_ids = state.rng.sample(list(state.worlds.keys()), min(num_worlds, len(state.worlds)))
+        target_world_ids = state.rng.sample(
+            list(state.worlds.keys()), min(num_worlds, len(state.worlds))
+        )
         for target_world_id in target_world_ids:
             target_world = state.worlds[target_world_id]
             if target_world.market:
-                target_world.market.inventory.remove_clamped(commodity_id, quantity_per_world)
+                target_world.market.inventory.remove_clamped(
+                    commodity_id, quantity_per_world
+                )
     # TODO: Add faction influence shifts, capacity modifiers etc.

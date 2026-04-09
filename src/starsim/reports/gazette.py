@@ -23,7 +23,9 @@ def generate_gazette_report(universe):
     for world_id, world in universe.worlds.items():
         if world.population:
             global_balances[CommodityId("food")] += world.food_balance
-            global_balances[CommodityId("consumer_goods")] += world.consumer_goods_balance
+            global_balances[CommodityId("consumer_goods")] += (
+                world.consumer_goods_balance
+            )
         # For other resources, we would need a more sophisticated production/consumption tracker per world
         # For now, we only track food and consumer goods balances explicitly from World model.
 
@@ -38,8 +40,10 @@ def generate_gazette_report(universe):
             booms.append((commodity_id, balance))
 
     # Sort by severity (most negative balance for shortages, most positive for booms)
-    shortages.sort(key=lambda x: x[1]) # Sorts from most negative to least negative
-    booms.sort(key=lambda x: x[1], reverse=True) # Sorts from most positive to least positive
+    shortages.sort(key=lambda x: x[1])  # Sorts from most negative to least negative
+    booms.sort(
+        key=lambda x: x[1], reverse=True
+    )  # Sorts from most positive to least positive
 
     # Top 3 Shortages
     report += "\n--- Top 3 Shortages ---\n"
@@ -47,7 +51,9 @@ def generate_gazette_report(universe):
         report += "No significant shortages reported.\n"
     else:
         for i, (commodity_id, balance) in enumerate(shortages[:3]):
-            report += f"{i+1}. {commodity_id.capitalize()}: {balance:.2f} units deficit\n"
+            report += (
+                f"{i + 1}. {commodity_id.capitalize()}: {balance:.2f} units deficit\n"
+            )
 
     # Top 3 Booms
     report += "\n--- Top 3 Booms ---\n"
@@ -55,7 +61,9 @@ def generate_gazette_report(universe):
         report += "No significant booms reported.\n"
     else:
         for i, (commodity_id, balance) in enumerate(booms[:3]):
-            report += f"{i+1}. {commodity_id.capitalize()}: {balance:.2f} units surplus\n"
+            report += (
+                f"{i + 1}. {commodity_id.capitalize()}: {balance:.2f} units surplus\n"
+            )
 
     # Major Faction Shifts
     report += "\n--- Major Faction Shifts ---\n"

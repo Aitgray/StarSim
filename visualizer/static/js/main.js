@@ -31,7 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload || {}),
-        }).then(response => response.json());
+        }).then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        });
     }
 
     function updateTick(meta) {
@@ -73,7 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function fetchSimState() {
         return fetch('/sim/state')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
             .then(data => {
                 applySimState(data);
                 return data;

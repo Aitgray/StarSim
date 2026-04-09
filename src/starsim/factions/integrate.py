@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Dict, Any
+from typing import TYPE_CHECKING
 
 from ..core.ids import WorldId, LaneId
 from .ai import select_action
@@ -15,8 +15,7 @@ from .actions import (
 
 if TYPE_CHECKING:
     from ..core.state import UniverseState
-    from ..core.ids import FactionId, WorldId, LaneId
-    from .model import Faction
+    from ..core.ids import WorldId, LaneId
 
 
 def apply_faction_actions(state: UniverseState):
@@ -48,7 +47,7 @@ def apply_faction_actions(state: UniverseState):
             success = invest_civilian_action(faction_id, WorldId(target_id), state)
         elif action_type == "invest_military" and target_id:
             success = invest_military_action(faction_id, WorldId(target_id), state)
-        
+
         # Log the action
         if success:
             # TODO: More detailed logging of action effects

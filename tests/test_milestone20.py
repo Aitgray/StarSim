@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 
 from src.starsim.core.ids import CommodityId
 from src.starsim.generation.model import Planet
@@ -9,11 +8,8 @@ def test_planet_creation():
     planet = Planet(
         type="continental",
         habitability=0.85,
-        resource_potentials={
-            CommodityId("minerals"): 3.0,
-            CommodityId("food"): 5.0
-        },
-        tags={"temperate", "lush"}
+        resource_potentials={CommodityId("minerals"): 3.0, CommodityId("food"): 5.0},
+        tags={"temperate", "lush"},
     )
 
     assert planet.type == "continental"
@@ -36,9 +32,9 @@ def test_planet_resource_potentials_commodity_id():
         type="ocean",
         habitability=0.6,
         resource_potentials={
-            "energy": 2.5, # Test string input for CommodityId
-            CommodityId("alloy"): 0.5
-        }
+            "energy": 2.5,  # Test string input for CommodityId
+            CommodityId("alloy"): 0.5,
+        },
     )
     assert isinstance(list(planet.resource_potentials.keys())[0], str)
     assert planet.resource_potentials[CommodityId("energy")] == pytest.approx(2.5)

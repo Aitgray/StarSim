@@ -7,7 +7,7 @@ import pytest
 
 from src.starsim.economy.commodities import commodity_registry
 from src.starsim.economy.recipes import recipe_registry
-from src.starsim.events.registry import event_registry # Import event_registry
+from src.starsim.events.registry import event_registry  # Import event_registry
 
 
 @pytest.fixture(autouse=True)
@@ -27,11 +27,16 @@ def setup_registries():
 def universe_yaml_path() -> Path:
     return Path("data/universe.yaml")
 
+
 def pytest_addoption(parser):
     """Adds the --update-goldens command-line option."""
     parser.addoption(
-        "--update-goldens", action="store_true", default=False, help="Update golden regression files."
+        "--update-goldens",
+        action="store_true",
+        default=False,
+        help="Update golden regression files.",
     )
+
 
 def pytest_configure(config):
     """Ensures --update-goldens is only used with 'test_generator_regression.py'."""

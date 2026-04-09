@@ -1,4 +1,3 @@
-import pytest
 import random
 
 from src.starsim.core.ids import WorldId, LaneId
@@ -48,7 +47,7 @@ def test_rebuild_adjacency_correctness():
     state = UniverseState(
         seed=1,
         worlds={world1.id: world1, world2.id: world2, world3.id: world3},
-        lanes={lane1.id: lane1, lane2.id: lane2, lane3.id: lane3}
+        lanes={lane1.id: lane1, lane2.id: lane2, lane3.id: lane3},
     )
 
     # After __post_init__, adjacency should be built
@@ -61,15 +60,20 @@ def test_neighbors():
     world1 = World(id=WorldId("w1"), name="World 1")
     world2 = World(id=WorldId("w2"), name="World 2")
     world3 = World(id=WorldId("w3"), name="World 3")
-    world4 = World(id=WorldId("w4"), name="World 4") # Unconnected
+    world4 = World(id=WorldId("w4"), name="World 4")  # Unconnected
 
     lane1 = Lane(id=LaneId("l1"), a=WorldId("w1"), b=WorldId("w2"))
     lane2 = Lane(id=LaneId("l2"), a=WorldId("w2"), b=WorldId("w3"))
 
     state = UniverseState(
         seed=1,
-        worlds={world1.id: world1, world2.id: world2, world3.id: world3, world4.id: world4},
-        lanes={lane1.id: lane1, lane2.id: lane2}
+        worlds={
+            world1.id: world1,
+            world2.id: world2,
+            world3.id: world3,
+            world4.id: world4,
+        },
+        lanes={lane1.id: lane1, lane2.id: lane2},
     )
 
     assert set(state.neighbors(WorldId("w1"))) == {WorldId("w2")}
@@ -89,7 +93,7 @@ def test_lanes_from():
     state = UniverseState(
         seed=1,
         worlds={world1.id: world1, world2.id: world2, world3.id: world3},
-        lanes={lane1.id: lane1, lane2.id: lane2}
+        lanes={lane1.id: lane1, lane2.id: lane2},
     )
 
     lanes_w1 = state.lanes_from(WorldId("w1"))

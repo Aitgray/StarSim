@@ -7,6 +7,10 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "pyyaml",
+    "numpy",
+    "scipy",
+    "flask",
     "ruff",
     "pytest",
     "mypy",
@@ -17,6 +21,7 @@ addopts = "-q"
 testpaths = [
     "tests",
 ]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 88
@@ -25,5 +30,6 @@ line-length = 88
 line-length = 88
 
 [tool.mypy]
-# This is intentionally left blank for now.
-# We can add configuration here as the project grows.
+explicit_package_bases = true
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]

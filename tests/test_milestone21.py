@@ -3,10 +3,12 @@ from pathlib import Path
 import random
 
 from src.starsim.core.ids import WorldId, CommodityId
-from src.starsim.core.state import UniverseState
-from src.starsim.generation.model import Planet
 from src.starsim.generation.load import load_planet_types, load_system_templates
-from src.starsim.generation.system_gen import generate_planet, generate_world, generate_universe
+from src.starsim.generation.system_gen import (
+    generate_planet,
+    generate_world,
+    generate_universe,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -43,10 +45,10 @@ def test_generate_planet_deterministic(planet_types_data):
 
 def test_generate_planet_habitability_range(planet_types_data):
     # Test habitability falls within expected range for a specific type
-    rng = random.Random(100) # Use a different seed
+    rng = random.Random(100)  # Use a different seed
     desert_data = planet_types_data["desert"]
     planet = generate_planet(rng, desert_data)
-    
+
     # Based on desert_data, most habitability is between 0.3 and 0.6
     # This is a probabilistic test, so we assert broadly.
     assert 0.0 <= planet.habitability <= 1.0
@@ -89,16 +91,26 @@ def test_generate_universe_deterministic(system_templates_data, planet_types_dat
 
     assert universe1.seed == universe2.seed
     assert len(universe1.worlds) == len(universe2.worlds)
-    
+
     # Compare world data (simplistic, will be improved with dedicated World comparison later)
     assert list(universe1.worlds.keys()) == list(universe2.worlds.keys())
-    assert all(w1.name == w2.name for w1, w2 in zip(universe1.worlds.values(), universe2.worlds.values()))
-    assert all(len(w1.planets) == len(w2.planets) for w1, w2 in zip(universe1.worlds.values(), universe2.worlds.values()))
+    assert all(
+        w1.name == w2.name
+        for w1, w2 in zip(universe1.worlds.values(), universe2.worlds.values())
+    )
+    assert all(
+        len(w1.planets) == len(w2.planets)
+        for w1, w2 in zip(universe1.worlds.values(), universe2.worlds.values())
+    )
 
     # Check that a generated YAML loads without errors
     output_path = "data/universe_generated_test.json"
     from src.starsim.io.save_load import save_to_json, load_from_json
+
     save_to_json(universe1, output_path)
     loaded_universe = load_from_json(output_path)
-    assert loaded_universe.worlds[WorldId("sys-1")].name == universe1.worlds[WorldId("sys-1")].name
-    Path(output_path).unlink() # Clean up
+    assert (
+        loaded_universe.worlds[WorldId("sys-1")].name
+        == universe1.worlds[WorldId("sys-1")].name
+    )
+    Path(output_path).unlink()  # Clean up

@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from math import floor
 
-from ..core.ids import CommodityId, RecipeId # Import RecipeId
+from ..core.ids import CommodityId, RecipeId  # Import RecipeId
 from ..economy.consumption import Population
 from ..economy.production import Industry
 from ..economy.market import Market
@@ -10,14 +10,16 @@ from ..factions.model import WorldFactionState
 
 if TYPE_CHECKING:
     from ..world.model import World
-    from ..core.state import UniverseState # Added UniverseState for type hinting
+    from ..core.state import UniverseState  # Added UniverseState for type hinting
 
 # Constants for Milestone 22
 BASE_POPULATION = 1_000_000
 PRODUCTION_CAP_SCALING_FACTOR = 100.0
 
 
-def apply_planet_potentials_to_world(world: "World", universe_state: "UniverseState" = None):
+def apply_planet_potentials_to_world(
+    world: "World", universe_state: "Optional[UniverseState]" = None
+):
     """
     Applies generated planet potentials to a world's starting state.
 
@@ -44,7 +46,9 @@ def apply_planet_potentials_to_world(world: "World", universe_state: "UniverseSt
 
         # Set default population size based on habitability
         # Ensure a minimum population of 1
-        world.population.size = max(1, floor(BASE_POPULATION * primary_planet.habitability))
+        world.population.size = max(
+            1, floor(BASE_POPULATION * primary_planet.habitability)
+        )
 
         # Map potentials to industry caps
         # Initialize caps if they haven't been (Industry default_factory might already do this)

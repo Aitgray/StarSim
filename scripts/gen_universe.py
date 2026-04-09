@@ -1,7 +1,6 @@
 import argparse
 import sys
 from pathlib import Path
-import json
 
 # Add the project root to the Python path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -36,13 +35,17 @@ def main():
 
     # Load generation data
     planet_types_data = load_planet_types(Path("data/generation/planet_types.yaml"))
-    system_templates_data = load_system_templates(Path("data/generation/system_templates.yaml"))
+    system_templates_data = load_system_templates(
+        Path("data/generation/system_templates.yaml")
+    )
 
     # Initialize RNG
     rng = get_seeded_rng(args.seed)
 
     # Generate universe
-    generated_universe = generate_universe(rng, args.n_systems, system_templates_data, planet_types_data)
+    generated_universe = generate_universe(
+        rng, args.n_systems, system_templates_data, planet_types_data
+    )
 
     # Save to JSON
     save_to_json(generated_universe, args.out)
