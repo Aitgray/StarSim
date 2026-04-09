@@ -25,11 +25,11 @@ class Inventory:
         """
         if quantity < 0:
             raise ValueError("Quantity to remove must be non-negative.")
-        
+
         current_qty = self._quantities[commodity_id]
         actual_removed = min(quantity, current_qty)
         self._quantities[commodity_id] -= actual_removed
-        if self._quantities[commodity_id] < 1e-9: # Avoid tiny floating point negatives
+        if self._quantities[commodity_id] < 1e-9:  # Avoid tiny floating point negatives
             del self._quantities[commodity_id]
         return actual_removed
 
@@ -40,7 +40,7 @@ class Inventory:
         if quantity < 0:
             raise ValueError("Inventory quantity cannot be negative.")
         self._quantities[commodity_id] = quantity
-        if quantity < 1e-9: # Clean up zero entries
+        if quantity < 1e-9:  # Clean up zero entries
             del self._quantities[commodity_id]
 
     def to_dict(self) -> Dict[CommodityId, float]:

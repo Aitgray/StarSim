@@ -1,7 +1,11 @@
 import pytest
 from pathlib import Path
 
-from src.starsim.generation.load import load_planet_types, load_system_templates, GenerationSchemaError
+from src.starsim.generation.load import (
+    load_planet_types,
+    load_system_templates,
+    GenerationSchemaError,
+)
 
 
 @pytest.fixture

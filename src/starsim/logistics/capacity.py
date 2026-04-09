@@ -9,7 +9,9 @@ from ..core.ids import LaneId
 class LaneCapacity:
     # Tracks used capacity for current tick
     # Reset each tick during trade phase (or similar)
-    used_capacity: Dict[LaneId, float] = field(default_factory=lambda: defaultdict(float))
+    used_capacity: Dict[LaneId, float] = field(
+        default_factory=lambda: defaultdict(float)
+    )
 
     def add_used_capacity(self, lane_id: LaneId, quantity: float):
         self.used_capacity[lane_id] += quantity

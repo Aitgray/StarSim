@@ -10,5 +10,5 @@ class Shipment:
     quantity: float
     source_world_id: WorldId
     destination_world_id: WorldId
-    eta_tick: int # Estimated Time of Arrival (tick number)
-    lane_id: Optional[LaneId] = None # For tracking which lane it's on
+    eta_tick: int  # Estimated Time of Arrival (tick number)
+    lane_id: Optional[LaneId] = None  # For tracking which lane it's on

@@ -47,7 +47,7 @@ def apply_faction_actions(state: UniverseState):
             success = invest_civilian_action(faction_id, WorldId(target_id), state)
         elif action_type == "invest_military" and target_id:
             success = invest_military_action(faction_id, WorldId(target_id), state)
-        
+
         # Log the action
         if success:
             # TODO: More detailed logging of action effects

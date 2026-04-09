@@ -12,14 +12,17 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class Market:
     inventory: Inventory = field(default_factory=Inventory)
     prices: Dict[CommodityId, float] = field(default_factory=dict)
-    targets: Dict[CommodityId, float] = field(default_factory=dict) # days-of-cover target
+    targets: Dict[CommodityId, float] = field(
+        default_factory=dict
+    )  # days-of-cover target
 
     # Price adjustment parameters
-    price_change_factor: float = 0.1 # How much prices react
+    price_change_factor: float = 0.1  # How much prices react
     min_price_multiplier: float = 0.5
     max_price_multiplier: float = 2.0
 
@@ -32,26 +35,28 @@ def update_prices(world: "World", state: "UniverseState"):
         return
 
     market = world.market
-    
+
     # Ensure all commodities have a target and initial price
     for commodity in state.commodity_registry.all_commodities():
         if commodity.id not in market.targets:
             # Default target to 10 days of cover, for now just a fixed number
             # This should eventually be driven by population needs or other factors
-            market.targets[commodity.id] = 10.0 
+            market.targets[commodity.id] = 10.0
         if commodity.id not in market.prices:
             market.prices[commodity.id] = commodity.base_price
 
     for commodity_id, target_qty in market.targets.items():
         current_qty = market.inventory.get(commodity_id)
-        current_price = market.prices.get(commodity_id, state.commodity_registry.get(commodity_id).base_price)
+        current_price = market.prices.get(
+            commodity_id, state.commodity_registry.get(commodity_id).base_price
+        )
 
         # Simple heuristic: if inventory < target, price increases; if > target, price decreases
         # The larger the difference, the larger the change
-        if target_qty > 0: # Avoid division by zero
+        if target_qty > 0:  # Avoid division by zero
             ratio = current_qty / target_qty
-        else: # If target is zero, any inventory is surplus
-            ratio = 10.0 # Arbitrarily high to reduce price
+        else:  # If target is zero, any inventory is surplus
+            ratio = 10.0  # Arbitrarily high to reduce price
         # Adjust price based on ratio
         # If ratio < 1, price increases. If ratio > 1, price decreases.
         # price_change_factor determines the speed of adjustment

@@ -11,9 +11,11 @@ class Commodity:
     id: CommodityId
     name: str
     base_price: float
-    category: str = "basic" # e.g., "basic", "refined", "military", "welfare", "currency"
+    category: str = (
+        "basic"  # e.g., "basic", "refined", "military", "welfare", "currency"
+    )
     is_currency: bool = False
-    decay_rate: float = 0.0 # Rate at which this commodity decays/burns off per tick
+    decay_rate: float = 0.0  # Rate at which this commodity decays/burns off per tick
 
 
 class CommodityRegistry:
@@ -21,17 +23,17 @@ class CommodityRegistry:
         self._commodities: Dict[CommodityId, Commodity] = {}
 
     def load_from_yaml(self, path: Path):
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = yaml.safe_load(f)
-        
+
         for c_data in data:
             commodity = Commodity(
-                id=CommodityId(c_data['id']),
-                name=c_data['name'],
-                base_price=c_data['base_price'],
-                category=c_data.get('category', 'basic'),
-                is_currency=c_data.get('is_currency', False),
-                decay_rate=c_data.get('decay_rate', 0.0)
+                id=CommodityId(c_data["id"]),
+                name=c_data["name"],
+                base_price=c_data["base_price"],
+                category=c_data.get("category", "basic"),
+                is_currency=c_data.get("is_currency", False),
+                decay_rate=c_data.get("decay_rate", 0.0),
             )
             self._commodities[commodity.id] = commodity
 
@@ -42,6 +44,7 @@ class CommodityRegistry:
 
     def all_commodities(self) -> List[Commodity]:
         return list(self._commodities.values())
+
 
 # Global registry instance
 commodity_registry = CommodityRegistry()

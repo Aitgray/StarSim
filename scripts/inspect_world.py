@@ -12,7 +12,9 @@ from src.starsim.core.ids import WorldId
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Inspect the state of a specific world in StarSim.")
+    parser = argparse.ArgumentParser(
+        description="Inspect the state of a specific world in StarSim."
+    )
     parser.add_argument(
         "--scenario",
         type=str,
@@ -33,7 +35,7 @@ def main():
     args = parser.parse_args()
 
     if args.from_json:
-        with open(args.from_json, 'r') as f:
+        with open(args.from_json, "r") as f:
             data = json.load(f)
         state = from_dict(data)
         print(f"Loaded state from JSON file: {args.from_json}")
@@ -58,7 +60,7 @@ def main():
         "unrest": world.unrest,
         "control": world.control,
     }
-    
+
     if world.market:
         world_info["market"] = {
             "inventory": world.market.inventory.to_dict(),

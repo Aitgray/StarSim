@@ -25,7 +25,9 @@ def main():
         "--dump-json", action="store_true", help="Dump the final state to a JSON file."
     )
     parser.add_argument(
-        "--debug-faction-ai", type=str, help="Enable AI debugging for a specific faction ID."
+        "--debug-faction-ai",
+        type=str,
+        help="Enable AI debugging for a specific faction ID.",
     )
     args = parser.parse_args()
 
@@ -36,16 +38,20 @@ def main():
     # Run the simulation
     for _ in range(args.ticks):
         initial_tick = state.tick
-        
+
         # Faction AI Debugging
         if args.debug_faction_ai:
             from src.starsim.factions.model import FactionId
             from src.starsim.factions.ai import select_action_debug
-            
+
             faction_id_to_debug = FactionId(args.debug_faction_ai)
             if faction_id_to_debug in state.factions:
-                debug_output = select_action_debug(state.factions[faction_id_to_debug], state)
-                print(f"\n--- Faction AI Debug (Tick {initial_tick}) for {faction_id_to_debug} ---")
+                debug_output = select_action_debug(
+                    state.factions[faction_id_to_debug], state
+                )
+                print(
+                    f"\n--- Faction AI Debug (Tick {initial_tick}) for {faction_id_to_debug} ---"
+                )
                 print(debug_output)
             else:
                 print(f"\nWarning: Debug faction '{faction_id_to_debug}' not found.")
@@ -56,9 +62,11 @@ def main():
 
     if args.dump_json:
         from src.starsim.io.save_load import save_to_json
+
         output_path = "final_state.json"
         save_to_json(state, output_path)
         print(f"Final state dumped to {output_path}")
+
 
 if __name__ == "__main__":
     main()

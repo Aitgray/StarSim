@@ -1,7 +1,13 @@
 import json
 from typing import Dict, Any
 
-from ..core.ids import WorldId, LaneId, CommodityId, RecipeId, FactionId # Import FactionId
+from ..core.ids import (
+    WorldId,
+    LaneId,
+    CommodityId,
+    RecipeId,
+    FactionId,
+)  # Import FactionId
 from ..core.state import UniverseState
 from ..world.model import World, Lane
 from ..economy.market import Market
@@ -10,10 +16,13 @@ from ..economy.consumption import Population
 from ..economy.production import Industry
 from ..logistics.shipping import Shipment
 from ..logistics.capacity import LaneCapacity
-from ..factions.model import Faction, WorldFactionState # Import Faction, WorldFactionState
-from ..events.model import EventDef # Import EventDef
-from ..events.registry import EventRegistry # Import EventRegistry
-from ..generation.model import Planet # Import Planet
+from ..factions.model import (
+    Faction,
+    WorldFactionState,
+)  # Import Faction, WorldFactionState
+from ..events.model import EventDef  # Import EventDef
+from ..events.registry import EventRegistry  # Import EventRegistry
+from ..generation.model import Planet  # Import Planet
 
 
 def to_dict(state: UniverseState) -> Dict[str, Any]:
@@ -29,26 +38,30 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
             "tags": list(world.tags),
             "scarcity": world.scarcity,
             "unrest": world.unrest,
-            "food_balance": world.food_balance, # New field
-            "starvation_level": world.starvation_level, # New field
-            "consumer_goods_balance": world.consumer_goods_balance, # New field
-            "consumer_goods_shortage_level": world.consumer_goods_shortage_level, # New field
+            "food_balance": world.food_balance,  # New field
+            "starvation_level": world.starvation_level,  # New field
+            "consumer_goods_balance": world.consumer_goods_balance,  # New field
+            "consumer_goods_shortage_level": world.consumer_goods_shortage_level,  # New field
             "planets": [
                 {
                     "type": planet.type,
-                    "name": planet.name, # Add planet name
+                    "name": planet.name,  # Add planet name
                     "habitability": planet.habitability,
-                    "resource_potentials": {c_id: val for c_id, val in planet.resource_potentials.items()},
+                    "resource_potentials": {
+                        c_id: val for c_id, val in planet.resource_potentials.items()
+                    },
                     "tags": list(planet.tags),
                 }
                 for planet in world.planets
-            ]
+            ],
         }
         if world.market:
             world_dict["market"] = {
                 "inventory": world.market.inventory.to_dict(),
                 "prices": {c_id: price for c_id, price in world.market.prices.items()},
-                "targets": {c_id: target for c_id, target in world.market.targets.items()},
+                "targets": {
+                    c_id: target for c_id, target in world.market.targets.items()
+                },
             }
         if world.population:
             world_dict["population"] = {
@@ -66,8 +79,12 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
             }
         if world.factions:
             world_dict["factions"] = {
-                "influence": {f_id: inf for f_id, inf in world.factions.influence.items()},
-                "garrison": {f_id: gar for f_id, gar in world.factions.garrison.items()},
+                "influence": {
+                    f_id: inf for f_id, inf in world.factions.influence.items()
+                },
+                "garrison": {
+                    f_id: gar for f_id, gar in world.factions.garrison.items()
+                },
                 "control": world.factions.control,
                 "control_threshold_gain": world.factions.control_threshold_gain,
                 "control_threshold_loss": world.factions.control_threshold_loss,
@@ -99,18 +116,19 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
     ]
 
     lane_capacity_data = {
-        str(lane_id): capacity for lane_id, capacity in state.lane_capacity_tracker.used_capacity.items()
+        str(lane_id): capacity
+        for lane_id, capacity in state.lane_capacity_tracker.used_capacity.items()
     }
 
     factions_data = [
         {
             "id": faction.id,
             "name": faction.name,
-            "color": faction.color, # Added color serialization
+            "color": faction.color,  # Added color serialization
             "traits": list(faction.traits),
             "weights": faction.weights,
-            "capital_world_id": faction.capital_world_id, # Added capital_world_id serialization
-            "resource_desire": faction.resource_desire, # Added resource_desire serialization
+            "capital_world_id": faction.capital_world_id,  # Added capital_world_id serialization
+            "resource_desire": faction.resource_desire,  # Added resource_desire serialization
         }
         for faction in state.factions.values()
     ]
@@ -140,141 +158,178 @@ def to_dict(state: UniverseState) -> Dict[str, Any]:
 def from_dict(data: Dict[str, Any]) -> UniverseState:
     """Creates a UniverseState from a dictionary."""
     factions = {}
-    if 'factions' in data:
-        for f_data in data['factions']:
+    if "factions" in data:
+        for f_data in data["factions"]:
             faction = Faction(
-                id=FactionId(f_data['id']),
-                name=f_data['name'],
-                color=f_data.get('color', '#CCCCCC'), # Deserialize color
-                traits=set(f_data.get('traits', [])),
-                weights=f_data.get('weights', {}),
-                capital_world_id=f_data.get('capital_world_id'), # Deserialize capital_world_id
-                resource_desire=f_data.get('resource_desire', 0.5), # Deserialize resource_desire
+                id=FactionId(f_data["id"]),
+                name=f_data["name"],
+                color=f_data.get("color", "#CCCCCC"),  # Deserialize color
+                traits=set(f_data.get("traits", [])),
+                weights=f_data.get("weights", {}),
+                capital_world_id=f_data.get(
+                    "capital_world_id"
+                ),  # Deserialize capital_world_id
+                resource_desire=f_data.get(
+                    "resource_desire", 0.5
+                ),  # Deserialize resource_desire
             )
             factions[faction.id] = faction
 
     worlds = {}
-    for w_data in data['worlds']:
+    for w_data in data["worlds"]:
         market = None
-        if 'market' in w_data:
-            market_data = w_data['market']
+        if "market" in w_data:
+            market_data = w_data["market"]
             inventory = Inventory()
-            for c_id, qty in market_data.get('inventory', {}).items():
+            for c_id, qty in market_data.get("inventory", {}).items():
                 inventory.add(CommodityId(c_id), qty)
-            prices = {CommodityId(c_id): price for c_id, price in market_data.get('prices', {}).items()}
-            targets = {CommodityId(c_id): target for c_id, target in market_data.get('targets', {}).items()}
+            prices = {
+                CommodityId(c_id): price
+                for c_id, price in market_data.get("prices", {}).items()
+            }
+            targets = {
+                CommodityId(c_id): target
+                for c_id, target in market_data.get("targets", {}).items()
+            }
             market = Market(inventory=inventory, prices=prices, targets=targets)
 
         population = None
-        if 'population' in w_data and w_data['population'] is not None:
-            pop_data = w_data['population']
-            needs = {CommodityId(c_id): qty for c_id, qty in pop_data.get('needs', {}).items()}
+        if "population" in w_data and w_data["population"] is not None:
+            pop_data = w_data["population"]
+            needs = {
+                CommodityId(c_id): qty
+                for c_id, qty in pop_data.get("needs", {}).items()
+            }
             population = Population(
-                size=pop_data.get('size', 0),
-                growth_rate=pop_data.get('growth_rate', 0.01),
+                size=pop_data.get("size", 0),
+                growth_rate=pop_data.get("growth_rate", 0.01),
                 needs=needs,
-                food_required_per_capita_per_tick=pop_data.get('food_required_per_capita_per_tick', 0.0001),
-                consumer_goods_required_per_capita_per_tick=pop_data.get('consumer_goods_required_per_capita_per_tick', 0.0001),
-                consumer_goods_excess_burn_rate=pop_data.get('consumer_goods_excess_burn_rate', 0.5),
-                energy_upkeep_per_capita_per_tick=pop_data.get('energy_upkeep_per_capita_per_tick', 0.0001),
+                food_required_per_capita_per_tick=pop_data.get(
+                    "food_required_per_capita_per_tick", 0.0001
+                ),
+                consumer_goods_required_per_capita_per_tick=pop_data.get(
+                    "consumer_goods_required_per_capita_per_tick", 0.0001
+                ),
+                consumer_goods_excess_burn_rate=pop_data.get(
+                    "consumer_goods_excess_burn_rate", 0.5
+                ),
+                energy_upkeep_per_capita_per_tick=pop_data.get(
+                    "energy_upkeep_per_capita_per_tick", 0.0001
+                ),
             )
 
         industry = None
-        if 'industry' in w_data:
-            industry_data = w_data['industry']
-            caps = {RecipeId(r_id): cap for r_id, cap in industry_data.get('caps', {}).items()}
+        if "industry" in w_data:
+            industry_data = w_data["industry"]
+            caps = {
+                RecipeId(r_id): cap
+                for r_id, cap in industry_data.get("caps", {}).items()
+            }
             industry = Industry(caps=caps)
 
         world_factions = None
-        control = None # Initialize control to None
-        if 'factions' in w_data and w_data['factions'] is not None:
-            wf_data = w_data['factions']
-            influence = {FactionId(f_id): inf for f_id, inf in wf_data.get('influence', {}).items()}
-            garrison = {FactionId(f_id): gar for f_id, gar in wf_data.get('garrison', {}).items()}
-            control = FactionId(wf_data['control']) if wf_data.get('control') else None
+        control = None  # Initialize control to None
+        if "factions" in w_data and w_data["factions"] is not None:
+            wf_data = w_data["factions"]
+            influence = {
+                FactionId(f_id): inf
+                for f_id, inf in wf_data.get("influence", {}).items()
+            }
+            garrison = {
+                FactionId(f_id): gar
+                for f_id, gar in wf_data.get("garrison", {}).items()
+            }
+            control = FactionId(wf_data["control"]) if wf_data.get("control") else None
             world_factions = WorldFactionState(
                 influence=influence,
                 garrison=garrison,
                 control=control,
-                control_threshold_gain=wf_data.get('control_threshold_gain', 0.7),
-                control_threshold_loss=wf_data.get('control_threshold_loss', 0.4),
+                control_threshold_gain=wf_data.get("control_threshold_gain", 0.7),
+                control_threshold_loss=wf_data.get("control_threshold_loss", 0.4),
             )
 
-        worlds[WorldId(w_data['id'])] = World(
-            id=WorldId(w_data['id']),
-            name=w_data['name'],
-            stability=w_data.get('stability', 1.0),
-            prosperity=w_data.get('prosperity', 1.0),
-            tech=w_data.get('tech', 1.0),
-            tags=set(w_data.get('tags', [])),
-            scarcity=w_data.get('scarcity', 0.0),
-            unrest=w_data.get('unrest', 0.0),
-            food_balance=w_data.get('food_balance', 0.0),
-            starvation_level=w_data.get('starvation_level', 0.0),
-            consumer_goods_balance=w_data.get('consumer_goods_balance', 0.0),
-            consumer_goods_shortage_level=w_data.get('consumer_goods_shortage_level', 0.0),
+        worlds[WorldId(w_data["id"])] = World(
+            id=WorldId(w_data["id"]),
+            name=w_data["name"],
+            stability=w_data.get("stability", 1.0),
+            prosperity=w_data.get("prosperity", 1.0),
+            tech=w_data.get("tech", 1.0),
+            tags=set(w_data.get("tags", [])),
+            scarcity=w_data.get("scarcity", 0.0),
+            unrest=w_data.get("unrest", 0.0),
+            food_balance=w_data.get("food_balance", 0.0),
+            starvation_level=w_data.get("starvation_level", 0.0),
+            consumer_goods_balance=w_data.get("consumer_goods_balance", 0.0),
+            consumer_goods_shortage_level=w_data.get(
+                "consumer_goods_shortage_level", 0.0
+            ),
             planets=[
                 Planet(
-                    type=p_data['type'],
-                    name=p_data.get('name', ''), # Deserialize planet name
-                    habitability=p_data['habitability'],
-                    resource_potentials={CommodityId(c_id): val for c_id, val in p_data['resource_potentials'].items()},
-                    tags=set(p_data['tags']),
+                    type=p_data["type"],
+                    name=p_data.get("name", ""),  # Deserialize planet name
+                    habitability=p_data["habitability"],
+                    resource_potentials={
+                        CommodityId(c_id): val
+                        for c_id, val in p_data["resource_potentials"].items()
+                    },
+                    tags=set(p_data["tags"]),
                 )
-                for p_data in w_data.get('planets', [])
+                for p_data in w_data.get("planets", [])
             ],
             market=market,
             population=population,
             industry=industry,
             factions=world_factions,
-            control=control, # Set world.control from world_factions.control
+            control=control,  # Set world.control from world_factions.control
         )
 
     lanes = {
-        LaneId(l_data['id']): Lane(
-            id=LaneId(l_data['id']),
-            a=WorldId(l_data['a']),
-            b=WorldId(l_data['b']),
-            distance=l_data.get('distance', 1.0),
-            hazard=l_data.get('hazard', 0.0),
-            capacity=l_data.get('capacity', 1.0),
-        ) for l_data in data['lanes']
+        LaneId(l_data["id"]): Lane(
+            id=LaneId(l_data["id"]),
+            a=WorldId(l_data["a"]),
+            b=WorldId(l_data["b"]),
+            distance=l_data.get("distance", 1.0),
+            hazard=l_data.get("hazard", 0.0),
+            capacity=l_data.get("capacity", 1.0),
+        )
+        for l_data in data["lanes"]
     }
 
     active_shipments = []
-    if 'active_shipments' in data:
-        for s_data in data['active_shipments']:
-            lane_id = s_data.get('lane_id')
+    if "active_shipments" in data:
+        for s_data in data["active_shipments"]:
+            lane_id = s_data.get("lane_id")
             shipment = Shipment(
-                commodity_id=CommodityId(s_data['commodity_id']),
-                quantity=s_data['quantity'],
-                source_world_id=WorldId(s_data['source_world_id']),
-                destination_world_id=WorldId(s_data['destination_world_id']),
-                eta_tick=s_data['eta_tick'],
+                commodity_id=CommodityId(s_data["commodity_id"]),
+                quantity=s_data["quantity"],
+                source_world_id=WorldId(s_data["source_world_id"]),
+                destination_world_id=WorldId(s_data["destination_world_id"]),
+                eta_tick=s_data["eta_tick"],
                 lane_id=LaneId(lane_id) if lane_id else None,
             )
             active_shipments.append(shipment)
 
     lane_capacity_tracker = LaneCapacity()
-    if 'lane_capacity_tracker' in data:
+    if "lane_capacity_tracker" in data:
         lane_capacity_tracker.used_capacity = {
-            LaneId(str_id): capacity for str_id, capacity in data['lane_capacity_tracker'].items()
+            LaneId(str_id): capacity
+            for str_id, capacity in data["lane_capacity_tracker"].items()
         }
 
     event_registry = EventRegistry()
-    if 'event_registry' in data:
-        for e_data in data['event_registry']:
+    if "event_registry" in data:
+        for e_data in data["event_registry"]:
             event_def = EventDef(
-                id=e_data['id'],
-                base_weight=e_data.get('base_weight', 1.0),
-                conditions=e_data.get('conditions', []),
-                effects=e_data.get('effects', [])
+                id=e_data["id"],
+                base_weight=e_data.get("base_weight", 1.0),
+                conditions=e_data.get("conditions", []),
+                effects=e_data.get("effects", []),
             )
             event_registry._events[event_def.id] = event_def
 
     state = UniverseState(
-        seed=data['seed'],
-        tick=data['tick'],
+        seed=data["seed"],
+        tick=data["tick"],
         worlds=worlds,
         lanes=lanes,
         active_shipments=active_shipments,
@@ -287,12 +342,12 @@ def from_dict(data: Dict[str, Any]) -> UniverseState:
 
 def save_to_json(state: UniverseState, path: str):
     """Saves the universe state to a JSON file."""
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(to_dict(state), f, indent=2)
 
 
 def load_from_json(path: str) -> UniverseState:
     """Loads the universe state from a JSON file."""
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = json.load(f)
     return from_dict(data)
