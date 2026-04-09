@@ -11,21 +11,21 @@ from typing import Dict, List, Set, Optional
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request  # noqa: E402
 
-from src.starsim.core.state import UniverseState
-from src.starsim.core.ids import WorldId # Import WorldId for updating universe.worlds
-import src.starsim.core.sim as sim # New: Import the sim module
-from src.starsim.generation.system_gen import generate_universe
-from src.starsim.generation.load import load_planet_types, load_system_templates, load_planet_names, load_system_names
-from src.starsim.world.load import load_universe # Corrected import for load_universe
-from src.starsim.generation.bootstrap import apply_planet_potentials_to_world
-from src.starsim.generation.lane_gen import generate_non_intersecting_lanes # Import new lane generation
-from src.starsim.factions.model import WorldFactionState # Imported for WorldFactionState control
-from src.starsim.factions.ai import compute_world_value # Import compute_world_value
-from src.starsim.io.save_load import to_dict, from_dict
-from src.starsim.economy.recipes import recipe_registry
-from src.starsim.economy.commodities import commodity_registry
+from src.starsim.core.state import UniverseState  # noqa: E402
+from src.starsim.core.ids import WorldId  # noqa: E402
+import src.starsim.core.sim as sim  # noqa: E402
+from src.starsim.generation.system_gen import generate_universe  # noqa: E402
+from src.starsim.generation.load import load_planet_types, load_system_templates, load_planet_names, load_system_names  # noqa: E402
+from src.starsim.world.load import load_universe  # noqa: E402
+from src.starsim.generation.bootstrap import apply_planet_potentials_to_world  # noqa: E402
+from src.starsim.generation.lane_gen import generate_non_intersecting_lanes  # noqa: E402
+from src.starsim.factions.model import WorldFactionState  # noqa: E402
+from src.starsim.factions.ai import compute_world_value  # noqa: E402
+from src.starsim.io.save_load import to_dict, from_dict  # noqa: E402
+from src.starsim.economy.recipes import recipe_registry  # noqa: E402
+from src.starsim.economy.commodities import commodity_registry  # noqa: E402
 
 
 app = Flask(__name__)

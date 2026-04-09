@@ -38,7 +38,7 @@ def load_universe(path: Path) -> UniverseState:
     if len(world_ids) != len(set(world_ids)):
         raise UniverseSchemaError("Duplicate world IDs found.")
     
-    lane_ids = [l['id'] for l in lanes_data]
+    lane_ids = [ld['id'] for ld in lanes_data]
     if len(lane_ids) != len(set(lane_ids)):
         raise UniverseSchemaError("Duplicate lane IDs found.")
 
