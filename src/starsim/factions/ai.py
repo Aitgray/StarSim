@@ -6,7 +6,7 @@ from ..core.ids import CommodityId # Import CommodityId
 if TYPE_CHECKING:
     from ..core.state import UniverseState
     from ..world.model import World
-    from .model import Faction, FactionId
+    from .model import Faction
 
 
 def compute_world_value(faction: Faction, world: World, state: UniverseState) -> float:

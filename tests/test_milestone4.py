@@ -3,8 +3,7 @@ from pathlib import Path
 
 from src.starsim.core.ids import WorldId, CommodityId
 from src.starsim.core.state import UniverseState
-from src.starsim.economy.commodities import commodity_registry, Commodity
-from src.starsim.economy.inventory import Inventory
+from src.starsim.economy.commodities import commodity_registry
 from src.starsim.economy.market import Market, update_prices
 from src.starsim.world.load import load_universe
 from src.starsim.world.model import World

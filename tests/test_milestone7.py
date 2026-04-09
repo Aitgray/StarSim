@@ -1,21 +1,15 @@
 import pytest
 from pathlib import Path
-from copy import deepcopy
 
-from src.starsim.core.ids import WorldId, LaneId, CommodityId, RecipeId
+from src.starsim.core.ids import WorldId, LaneId, CommodityId
 from src.starsim.core.state import UniverseState
 from src.starsim.economy.commodities import commodity_registry
-from src.starsim.economy.inventory import Inventory
-from src.starsim.economy.market import Market, update_prices
-from src.starsim.economy.consumption import Population, consume
-from src.starsim.economy.recipes import recipe_registry, Recipe
-from src.starsim.economy.production import Industry, produce
+from src.starsim.economy.market import Market
+from src.starsim.economy.recipes import recipe_registry
 from src.starsim.economy.trade import build_candidate_trades, process_trade
-from src.starsim.world.load import load_universe
 from src.starsim.world.model import World, Lane
 from src.starsim.core.sim import step
 from src.starsim.logistics.shipping import Shipment
-from src.starsim.logistics.capacity import LaneCapacity
 
 
 @pytest.fixture(autouse=True)

@@ -4,7 +4,6 @@ from typing import Dict, TYPE_CHECKING
 import math # Import math for ceil and floor
 
 from ..core.ids import CommodityId
-from .inventory import Inventory
 
 if TYPE_CHECKING:
     from ..world.model import World
@@ -56,7 +55,7 @@ def consume(world: "World", tick: int):
 
     # --- Food Consumption (Milestone 14) ---
     total_food_needed = population.size * population.food_required_per_capita_per_tick
-    food_available = market.inventory.get(CommodityId("food"))
+    market.inventory.get(CommodityId("food"))
 
     if total_food_needed > 0:
         actual_food_consumed = market.inventory.remove_clamped(CommodityId("food"), total_food_needed)

@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any
 
 if TYPE_CHECKING:
     from ..core.state import UniverseState
-    from ..core.ids import WorldId, LaneId
+    from ..core.ids import LaneId
     from ..world.model import World
-    from ..economy.market import Market
 
 
 def apply_effect(effect: Dict[str, Any], world: World, state: UniverseState):

@@ -1,16 +1,11 @@
 import pytest
-from pathlib import Path
-from copy import deepcopy
 
 from src.starsim.core.ids import WorldId, CommodityId, RecipeId
 from src.starsim.core.state import UniverseState
 from src.starsim.economy.commodities import commodity_registry
-from src.starsim.economy.inventory import Inventory
 from src.starsim.economy.market import Market
 from src.starsim.economy.consumption import Population
-from src.starsim.economy.recipes import recipe_registry, Recipe
 from src.starsim.economy.production import Industry, produce
-from src.starsim.world.load import load_universe
 from src.starsim.world.model import World
 from src.starsim.core.sim import step
 
@@ -43,7 +38,6 @@ def universe_state_for_production(world_with_industry) -> UniverseState:
 def test_production_limited_by_capacity(universe_state_for_production):
     world = universe_state_for_production.worlds[WorldId("test_industry_world")]
     market = world.market
-    industry = world.industry
     
     initial_food = market.inventory.get(CommodityId("food"))
     
@@ -56,7 +50,6 @@ def test_production_limited_by_capacity(universe_state_for_production):
 def test_production_limited_by_input_availability(universe_state_for_production):
     world = universe_state_for_production.worlds[WorldId("test_industry_world")]
     market = world.market
-    industry = world.industry
 
     # Set minerals to only allow production of 5 alloys (needs 10 minerals per alloy, so 50 minerals total)
     market.inventory[CommodityId("minerals")] = 50.0 

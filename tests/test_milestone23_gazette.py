@@ -1,4 +1,3 @@
-import pytest
 from src.starsim.core.state import UniverseState
 from src.starsim.core.ids import WorldId # Import WorldId
 from src.starsim.world.model import World # Import World

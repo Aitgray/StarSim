@@ -1,4 +1,3 @@
-import pytest
 from src.starsim.core.ids import WorldId, CommodityId
 from src.starsim.world.model import World
 from src.starsim.economy.consumption import Population

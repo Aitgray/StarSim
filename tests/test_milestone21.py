@@ -3,8 +3,6 @@ from pathlib import Path
 import random
 
 from src.starsim.core.ids import WorldId, CommodityId
-from src.starsim.core.state import UniverseState
-from src.starsim.generation.model import Planet
 from src.starsim.generation.load import load_planet_types, load_system_templates
 from src.starsim.generation.system_gen import generate_planet, generate_world, generate_universe
 

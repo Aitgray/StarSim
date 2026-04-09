@@ -3,10 +3,10 @@ from dataclasses import dataclass, field
 from typing import Dict, Set, TYPE_CHECKING, Optional
 from collections import defaultdict # Added defaultdict import
 
-from ..core.ids import FactionId, WorldId, CommodityId # Added CommodityId
+from ..core.ids import FactionId, WorldId # Added CommodityId
 
 if TYPE_CHECKING:
-    from ..world.model import World
+    pass
 
 
 @dataclass

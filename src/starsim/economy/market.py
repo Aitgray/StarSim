@@ -1,9 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import logging
-from typing import Dict, Any, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 
-from ..core.ids import WorldId, CommodityId
+from ..core.ids import CommodityId
 from .inventory import Inventory
 
 if TYPE_CHECKING:

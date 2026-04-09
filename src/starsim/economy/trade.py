@@ -1,9 +1,7 @@
-from typing import List, Optional
+from typing import List
 from collections import defaultdict
 
-from ..core.ids import WorldId, LaneId, CommodityId
 from ..core.state import UniverseState
-from ..world.model import World, Lane
 from ..logistics.shipping import Shipment
 
 

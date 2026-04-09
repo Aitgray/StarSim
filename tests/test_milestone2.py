@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from src.starsim.world.load import load_universe, UniverseSchemaError
-from src.starsim.io.save_load import save_to_json, load_from_json, to_dict, from_dict
+from src.starsim.io.save_load import save_to_json, load_from_json, to_dict
 
 
 @pytest.fixture

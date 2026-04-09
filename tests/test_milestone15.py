@@ -88,13 +88,13 @@ def test_cg_surplus_increases_stability_burns_excess(universe_state_for_cg):
     
     # Check for excess burn: initial - consumed - remaining in market
     remaining_in_market = world.market.inventory.get(CommodityId("consumer_goods"))
-    total_consumed_and_burned = initial_cg_in_market - remaining_in_market
+    initial_cg_in_market - remaining_in_market
     
     # Expected total consumed + burned: total_cg_needed + (initial_cg_in_market - total_cg_needed) * burn_rate
     # If initial = 500, needed = 10, burn_rate = 0.5
     # Actual consumed = 10. Excess = 490. Burned = 490 * 0.5 = 245. Total removed = 10 + 245 = 255. Remaining = 245.
     
-    expected_burned = (initial_cg_in_market - total_cg_needed) * world.population.consumer_goods_excess_burn_rate
+    (initial_cg_in_market - total_cg_needed) * world.population.consumer_goods_excess_burn_rate
     
     actual_cg_consumed = total_cg_needed
     excess_after_consumption = initial_cg_in_market - actual_cg_consumed

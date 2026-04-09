@@ -7,7 +7,7 @@ import json
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.starsim.world.load import load_universe
-from src.starsim.io.save_load import to_dict, from_dict
+from src.starsim.io.save_load import from_dict
 from src.starsim.core.ids import WorldId
 
 

@@ -1,9 +1,7 @@
 import pytest
-from pathlib import Path
 
 from src.starsim.core.ids import WorldId, CommodityId, RecipeId
 from src.starsim.core.state import UniverseState
-from src.starsim.economy.commodities import commodity_registry
 from src.starsim.economy.market import Market
 from src.starsim.economy.production import Industry, produce
 from src.starsim.world.model import World

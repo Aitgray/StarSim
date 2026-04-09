@@ -1,12 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Dict, Any
-import random
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from ..core.state import UniverseState
     from ..core.ids import WorldId
     from ..world.model import World
-    from ..economy.market import Market
     from .model import EventDef # Keep this for type hinting in EventDef in evaluate_event_conditions
 
 

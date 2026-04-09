@@ -2,9 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, TYPE_CHECKING
 
-from ..core.ids import RecipeId, CommodityId
+from ..core.ids import RecipeId
 from ..world.model import World
-from .recipes import Recipe
 
 if TYPE_CHECKING:
     from ..core.state import UniverseState

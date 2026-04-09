@@ -1,6 +1,4 @@
 import pytest
-from pathlib import Path
-import random
 
 from src.starsim.core.state import UniverseState
 from src.starsim.core.ids import WorldId, CommodityId, RecipeId # Import RecipeId
@@ -10,7 +8,6 @@ from src.starsim.economy.market import Market
 from src.starsim.economy.inventory import Inventory
 from src.starsim.economy.production import Industry
 from src.starsim.generation.model import Planet
-from src.starsim.generation.bootstrap import apply_planet_potentials_to_world # Used for initial state
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path # Add this import for Path
 
 from src.starsim.core.state import UniverseState
-from src.starsim.core.sim import step, TickReport
+from src.starsim.core.sim import step
 from src.starsim.reports.gazette import generate_gazette
 from src.starsim.world.load import load_universe # Add this import
 

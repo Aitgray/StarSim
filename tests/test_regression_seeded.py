@@ -6,8 +6,6 @@ from typing import Dict, Any # Added for Dict and Any
 from src.starsim.core.state import UniverseState
 from src.starsim.core.sim import step
 from src.starsim.world.load import load_universe
-from src.starsim.economy.trade import process_trade
-from src.starsim.factions.integrate import apply_faction_actions
 
 
 # Define a fixed scenario for regression testing

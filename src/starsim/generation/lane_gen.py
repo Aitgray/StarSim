@@ -5,8 +5,8 @@ from scipy.spatial import Delaunay
 from typing import Dict, List, Tuple
 from collections import defaultdict
 
-from ..core.ids import WorldId, LaneId
-from ..world.model import World, Lane
+from ..core.ids import WorldId
+from ..world.model import World
 
 logger = logging.getLogger(__name__)
 

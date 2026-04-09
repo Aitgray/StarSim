@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Any, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Any, Optional, Set, Tuple
 import random
 import math
 
@@ -7,7 +7,7 @@ from ..core.ids import WorldId, CommodityId, LaneId
 from ..core.state import UniverseState
 from ..world.model import World, Lane
 from .model import Planet
-from .load import load_planet_types, load_system_templates, load_planet_names, load_system_names, _process_weights_for_random_selection
+from .load import _process_weights_for_random_selection
 from .bootstrap import apply_planet_potentials_to_world
 
 if TYPE_CHECKING:

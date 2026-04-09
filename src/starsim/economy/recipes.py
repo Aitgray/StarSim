@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import logging
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List
 import yaml
 
 from ..core.ids import CommodityId, RecipeId

@@ -1,13 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from ..core.ids import FactionId, WorldId, LaneId, RecipeId # Import RecipeId
+from ..core.ids import FactionId, WorldId, LaneId # Import RecipeId
 from ..economy.investment import invest_civilian, invest_military # Import investment functions
 
 if TYPE_CHECKING:
     from ..core.state import UniverseState
-    from ..world.model import World
-    from .model import Faction
 
 
 def expand_influence(faction_id: FactionId, world_id: WorldId, state: UniverseState) -> bool:

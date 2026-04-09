@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 
 from src.starsim.core.ids import CommodityId
 from src.starsim.generation.model import Planet

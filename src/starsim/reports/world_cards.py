@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from ..core.ids import CommodityId # Import CommodityId
 
 if TYPE_CHECKING:
     from ..world.model import World

@@ -1,4 +1,3 @@
-import pytest
 import random
 
 from src.starsim.core.ids import WorldId, LaneId
