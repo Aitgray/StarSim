@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Any, defaultdict
+from typing import Dict, Any
 
 from ..core.ids import WorldId, LaneId, CommodityId, RecipeId, FactionId # Import FactionId
 from ..core.state import UniverseState
